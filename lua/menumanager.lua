@@ -1,11 +1,9 @@
--- styles:
---[[ attach styles:
-borderlands-style number raining with "gravity" (sin wave for direction randomization)
-sticky damage numbers
-xiv rising flytext style
+--[[ 
+todo
+roman numerals (april fool's) w/ no-fun checkbox
+dots have no pos
 
-register turrets
-
+assure popup spreading in opposite directions for readability
 --]]
 
 
@@ -15,16 +13,18 @@ register turrets
 ODamagePopups = {
 	settings = {
 		use_raw_damage = true,
---		mode_damage_aggregate = 1, -- controls how multiple damage instances on a single enemy are displayed: 1) none (all separate popups); 2) aggregate by damage type; 3) aggregate all damage
+		mode_damage_aggregate = 2, -- controls how multiple damage instances on a single enemy are displayed: 1) none (all separate popups); 2) aggregate by enemy (any hit location); 3) aggregate by enemy and hit body
 		use_damage_type_icon = false,
 		use_player_only = true,
 		mode_damage_style = 5, -- 1) spawn at body. 2) hit position only; 3) borderlands-style rain; 4) xiv style flytext; 5) destiny 2 style left/right splits
 		use_sticky_body_position = false, -- if true, damage popups are always tethered/relative to the body position; if false, the damage popups may spawn at the hit position, but position does not follow the body position
 		damage_decimal_accuracy = 2, -- number of digits after the decimal point to show in damage numbers
-		damage_group_threshold = 2, -- hits must be within this many seconds from first hit to count in the same damage stack group (0 for infinite)
+		damage_group_threshold = 1.0, -- hits must be within this many seconds from first hit to count in the same damage stack group (0 for infinite)
 		damage_hide_zero_damage_hits = false, -- if true, hits that deal exactly 0 damage will not be shown
 		popup_hold_duration = 0.66,
 		popup_fade_duration = 0.33,
+		popup_pulse_fontsize_mul = 2.0,
+		popup_pulse_fontsize_duration = 2.0, 
 		
 		colors_packed = {
 			bullet    = 0xffffff,
@@ -94,9 +94,6 @@ end
 
 
 function ODamagePopups:CreateDamagePopup(damage_info)
-	if damage_info.critical then
-		OffyLib:c_log("Yes")
-	end
 	local attacker_unit = damage_info.attacker_unit
 	local SETTING_DAMAGE_TYPE_ICON = self.settings.use_damage_type_icon
 	local SETTING_RAW_DAMAGE = self.settings.use_raw_damage
@@ -110,6 +107,10 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 	local SETTING_HIDE_ZERO_DAMAGE_HITS = self.settings.damage_hide_zero_damage_hits
 	local DECIMAL_ACCURACY = self.settings.damage_decimal_accuracy -- should be an int
 	local SETTING_DAMAGE_STACKING_TIME_GROUP_THRESHOLD = self.settings.damage_group_threshold 
+	
+	local SETTING_FONTSIZE_PULSE_DURATION = self.settings.popup_pulse_fontsize_duration
+	local SETTING_FONTSIZE_PULSE_MULTIPLIER = self.settings.popup_pulse_fontsize_mul
+	
 	if not alive(attacker_unit) then
 		return
 	end
@@ -138,7 +139,8 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 		local name = damage_info.name
 		local body = col_ray.body
 		local distance = col_ray.distance
-		local hit_position = col_ray.hit_position or damage_info.pos
+		local hit_position = col_ray.hit_position or damage_info.pos or (ukey and hit_unit:position())
+		
 		local headshot = damage_info.headshot
 		local variant = damage_info.variant
 		local killshot = result.type == "death"
@@ -158,7 +160,7 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 				-- check if damage is within the damage group's time threshold
 				if SETTING_DAMAGE_STACKING_TIME_GROUP_THRESHOLD and SETTING_DAMAGE_STACKING_TIME_GROUP_THRESHOLD ~= 0 then
 					local damage_group_t = prev_instance.start_t or 0
-					if damage_group_t <= t - SETTING_DAMAGE_STACKING_TIME_GROUP_THRESHOLD then
+					if t - damage_group_t <= SETTING_DAMAGE_STACKING_TIME_GROUP_THRESHOLD then
 						-- is within this damage group
 					else
 						-- timed out, don't accept new damage (make a new instance)
@@ -168,15 +170,15 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 				
 				-- check if prev instance is valid according to user grouping rules
 				if timecheck_success then
-					if SETTING_DAMAGE_STACKING == 1 then
+					if SETTING_DAMAGE_STACKING == 3 then
 						if alive(body) and body == prev_instance.body then
 							popup_instance = prev_instance
 						end
 					elseif SETTING_DAMAGE_STACKING == 2 then
-						if hit_unit == prev_instance.unit then -- unit being alive is implicit if ukey is truthy
+						if ukey == prev_instance.ukey then -- unit being alive is implicit if ukey is truthy
 							popup_instance = prev_instance
 						end
-					else -- 3 or unspecified/fallback
+					else -- 1 or unspecified/fallback
 						-- no stacking behavior; make a new instance
 					end
 				end
@@ -294,11 +296,12 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 			
 			popup_instance = {
 				damage = damage,
-				body = SETTING_POPUP_STICKY and body,
+				body = body,
 				position = hit_position,
 				--anim_attach = attach_thread,
 				--anim_fadeout = fadeout_thread,
 				start_t = t,
+				ukey = ukey, -- identifier for the hit unit specifically; only used for checking damage grouping
 				key = tbl_key, -- lookup key to self._popup_instances for this instance (can be changed post init; do not assume final)
 				
 				workspace = self._workspace,
@@ -315,33 +318,25 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 			-- vault
 			popup_instance.anim_attach = popup_instance.panel:animate(self.animate_attach_vault,nil,popup_instance,100)
 		elseif SETTING_POPUP_STYLE == 4 then
+			-- xiv
 			popup_instance.anim_attach = popup_instance.panel:animate(self.animate_attach_xiv,nil,popup_instance,100)	
 		elseif SETTING_POPUP_STYLE == 5 then
+			-- destiny
 			popup_instance.anim_attach = popup_instance.panel:animate(self.animate_attach_destiny,nil,popup_instance,100,0.9)
-		elseif -- alive(body) and SETTING_POPUP_STYLE == 1 then
+		else -- alive(body) and SETTING_POPUP_STYLE == 1 then
 			-- attach to body part
 			popup_instance.anim_attach = popup_instance.panel:animate(self.animate_attach_body,nil,popup_instance)
 		end
-
---[[
-		local from_color -- flash color
-		local to_color = Color.white -- normal color
 		
-		if killshot then
-			
-		else
-			if headshot then
-			elseif crit then
-			end
+		if alive(popup_instance.text) then
+			local to = tweak_data.hud.medium_deafult_font_size
+			local from = to * SETTING_FONTSIZE_PULSE_MULTIPLIER
+			popup_instance.text:animate(self.animate_text_size_grow,nil,popup_instance,from,to,SETTING_FONTSIZE_PULSE_DURATION)
 		end
-		
-		--self:GetColor()
---]]
 		
 		popup_instance.anim_fadeout = popup_instance.panel:animate(self.animate_popup_fadeout,cb_done,popup_instance,POPUP_HOLD_DURATION,POPUP_FADE_DURATION,nil,nil)
 	end
 end
-
 
 function ODamagePopups:ClearPopups()
 	if alive(self._parent_panel) then
@@ -358,8 +353,7 @@ function ODamagePopups:ClearPopups()
 	end
 end
 
-
-
+-- not used
 function ODamagePopups.animate_attach_position(o,cb_done,data)
 	local world_pos = data.position or Vector3()
 	local screen_pos = Vector3()
@@ -397,7 +391,7 @@ function ODamagePopups.animate_attach_body(o,cb_done,data)
 	local viewport_cam = managers.viewport:get_current_camera()
 	local ws = data.workspace
 	while true do 
-		if alive(body) then
+		if alive(body) and ODamagePopups.settings.use_sticky_body_position then
 			mvector3.set(world_pos,body:oobb():center())
 		end
 		mvector3.set(cam_fwd_vec,viewport_cam:rotation():y())
@@ -436,7 +430,7 @@ function ODamagePopups.animate_attach_vault(o,cb_done,data,fly_speed)
 	local ws = data.workspace
 	local dt = 0
 	while true do 
-		if alive(body) then
+		if alive(body) and ODamagePopups.settings.use_sticky_body_position then
 			mvector3.set(world_pos,body:oobb():center())
 		end
 		mvector3.set(cam_fwd_vec,viewport_cam:rotation():y())
@@ -480,7 +474,7 @@ function ODamagePopups.animate_attach_xiv(o,cb_done,data,fly_speed)
 	while true do 
 		y = y - (fly_speed * dt)
 		
-		if alive(body) then
+		if alive(body) and ODamagePopups.settings.use_sticky_body_position then
 			mvector3.set(world_pos,body:oobb():center())
 		end
 		mvector3.set(cam_fwd_vec,viewport_cam:rotation():y())
@@ -540,7 +534,7 @@ function ODamagePopups.animate_attach_destiny(o,cb_done,data,fly_speed,decay)
 	while true do 
 		mvector3.set(cam_fwd_vec,viewport_cam:rotation():y())
 		mvector3.set(pos_dir_vec,viewport_cam:position())
-		if alive(body) then
+		if alive(body) and ODamagePopups.settings.use_sticky_body_position then
 			mvector3.set(world_pos,body:oobb():center())
 		end
 		mvector3.subtract(pos_dir_vec,world_pos)
@@ -569,14 +563,51 @@ function ODamagePopups.animate_attach_destiny(o,cb_done,data,fly_speed,decay)
 end
 
 
-function ODamagePopups.animate_color_flash(o,cb_done,color1,color2)
+function ODamagePopups.animate_color_flash(o,cb_done,data,color1,color2)
 end
 
-function ODamagePopups.animate_size_pulse(o,cb_done)
+function ODamagePopups.animate_size_pulse(o,cb_done,data)
 end
 
-function ODamagePopups.animate_text_size_pulse(o,cb_done)
-	
+-- not used
+-- starts at from_size, grows to to_size, shrinks back to from_size
+function ODamagePopups.animate_text_size_pulse(o,cb_done,data,from_size,to_size,duration_max)
+	from_size = from_size or o:font_size()
+	to_size = to_size or (from_size * 1.5)
+	duration_max = duration_max or 1
+	local c_x,c_y = o:center()
+	local t = 0
+	local delta = to_size - from_size
+	local lerp = 0
+	local speed_mul = 4 * 360 / math.pi
+	while t < duration_max do
+		t = t + coroutine.yield()
+		local lerp = math.sin(t * speed_mul / duration_max)
+		o:set_font_size(from_size + delta * lerp * lerp)
+		o:set_center(c_x,c_y)
+	end
+	o:set_font_size(from_size)
+	o:set_center(c_x,c_y)
+end
+
+-- starts at from_size, grows to to_size
+function ODamagePopups.animate_text_size_grow(o,cb_done,data,from_size,to_size,duration_max)
+	from_size = from_size or o:font_size()
+	to_size = to_size or (from_size * 1.5)
+	duration_max = duration_max or 1
+	local c_x,c_y = o:center()
+	local t = 0
+	local delta = to_size - from_size
+	local lerp = 0
+	local speed_mul = 2 * 360 / math.pi
+	while t < duration_max do
+		t = t + coroutine.yield()
+		local lerp = math.sin(t * speed_mul / duration_max)
+		o:set_font_size(from_size + delta * lerp * lerp)
+		o:set_center(c_x,c_y)
+	end
+	o:set_font_size(from_size)
+	o:set_center(c_x,c_y)
 end
 
 function ODamagePopups.animate_popup_fadeout(o,cb_done,data,hold_duration,fade_duration,from_a,to_a,...)
