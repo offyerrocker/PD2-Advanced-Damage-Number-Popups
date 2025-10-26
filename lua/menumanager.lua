@@ -1,8 +1,6 @@
 --[[ 
 todo
 roman numerals (april fool's) w/ no-fun checkbox
-dots have no pos
-
 assure popup spreading in opposite directions for readability
 --]]
 
@@ -25,6 +23,7 @@ ODamagePopups = {
 		popup_fade_duration = 0.33,
 		popup_pulse_fontsize_mul = 2.0,
 		popup_pulse_fontsize_duration = 2.0, 
+		fun_allowed = 2, -- april fool's control; 1=always,2=seasonal,3=never
 		
 		colors_packed = {
 			bullet    = 0xffffff,
@@ -45,7 +44,8 @@ ODamagePopups = {
 	_colors = {}, -- list of unpacked colors
 	_popup_instances = {}, -- table, keyed by [string unitkey]
 	_workspace = nil, -- Workspace
-	_parent_panel = nil -- Panel
+	_parent_panel = nil, -- Panel
+	_fun_allowed = nil -- bool, determined on game load
 }
 
 function ODamagePopups:UnpackColors()
@@ -82,6 +82,16 @@ end
 -- on player spawned
 function ODamagePopups:OnLoad()
 	self:CheckHUD()
+	
+	-- april fool's check
+	if self.settings.fun_allowed == 1 then
+		self._fun_allowed = true
+	elseif self.settings.fun_allowed == 2 then
+		local today = os.date("*t",os.time())
+		self._fun_allowed = today.month == 4 and today.day == 1
+	else -- 3 or fallback
+		self._fun_allowed = false
+	end
 end
 
 function ODamagePopups:CheckHUD()
@@ -228,10 +238,33 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 		end
 		
 		local damage_string
-		if DECIMAL_ACCURACY > 1 then
-			damage_string = string.format("%0." .. tostring(DECIMAL_ACCURACY - 1) .. "f",damage)
+		if self._fun_allowed then
+			if math.floor(damage) == 69 then
+				damage_string = "69 (nice)" --not localized!
+			else
+				damage_string = self.to_roman_numerals_str(damage)
+			end
+			-- alt. exp
+--			damage_string = string.format("%e",damage)
+			
+			-- alt. hex
+--			if DECIMAL_ACCURACY > 1 then
+--				damage_string = string.format("%0." .. tostring(DECIMAL_ACCURACY - 1) .. "a",damage)
+--			else
+--				damage_string = string.format("%a",damage)
+--			end
+		if math.log(damage,10) > 10 then
+			if DECIMAL_ACCURACY > 1 then
+				damage_string = string.format("%." .. tostring(DECIMAL_ACCURACY) .. "g",damage) -- shortest representation (float or exp)
+			else
+				damage_string = string.format("%.1g",damage)
+			end
 		else
-			damage_string = string.format("%d",damage)
+			if DECIMAL_ACCURACY > 1 then
+				damage_string = string.format("%0." .. tostring(DECIMAL_ACCURACY - 1) .. "f",damage) 
+			else
+				damage_string = string.format("%d",damage)
+			end
 		end
 		
 		if popup_instance then
@@ -314,6 +347,7 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 		
 		end
 		
+		-- note: "done callbacks" on the attach functions will never run, since those animations are designed to run indefinitely and will not naturally self-terminate
 		if SETTING_POPUP_STYLE == 3 then
 			-- vault
 			popup_instance.anim_attach = popup_instance.panel:animate(self.animate_attach_vault,nil,popup_instance,100)
@@ -351,6 +385,69 @@ function ODamagePopups:ClearPopups()
 			self._popup_instances[k] = nil
 		end
 	end
+end
+
+function ODamagePopups.to_roman_numerals_str(n)
+	local letters = {
+		[1] = "I",
+		[5] = "V",
+		[10] = "X",
+		[50] = "L",
+		[100] = "C",
+		[500] = "D",
+		[1000] = "M"
+	}
+	local s = ""
+	
+	-- thousands
+	if n > 4000 then
+		-- someday we'll come up with the technology to represent numbers larger than 4000...
+		return "MMMM+"
+	end
+	
+	local num_thousands = math.floor(n/1000)
+	local rem_thousands = n % 1000
+	s = string.rep(letters[1000],num_thousands) .. s
+	
+	-- hundreds
+	local num_hundreds = math.floor(rem_thousands/100)
+	local rem_hundreds = rem_thousands % 100
+	if num_hundreds == 9 then -- 900 -> CM
+		s = s .. letters[100] .. letters[1000]
+	elseif num_hundreds >= 5 then -- 500+ -> D .. C(n)
+		s = s .. letters[500] .. string.rep(letters[100],num_hundreds - 5)
+	elseif num_hundreds == 4 then -- 400 -> CD
+		s = s .. letters[100] .. letters[500]
+	else -- C(n)
+		s = s .. string.rep(letters[100],num_hundreds)
+	end
+	
+	-- tens
+	local num_tens = math.floor(rem_hundreds/10)
+	local rem_tens = rem_thousands % 10
+	if num_tens == 9 then -- 90 -> LC
+		s = s .. letters[10] .. letters[100]
+	elseif num_tens >= 5 then -- 50+ > L .. X(n)
+		s = s .. letters[50] .. string.rep(letters[10],num_tens - 5)
+	elseif num_tens == 4 then -- 40 -> XL
+		s = s .. letters[10] .. letters[50]
+	else
+		s = s .. string.rep(letters[10],num_tens)
+	end
+	
+	-- ones
+	local num_ones = rem_tens
+	if num_ones == 9 then -- 9 -> IX
+		s = s .. letters[1] .. letters[10]
+	elseif num_ones >= 5 then -- 5+ > V .. I(n)
+		s = s .. letters[5] .. string.rep(letters[1],num_ones - 5)
+	elseif num_ones == 4 then -- 4 -> IV
+		s = s .. letters[1] .. letters[5]
+	else
+		s = s .. string.rep(letters[1],num_ones)
+	end
+	
+	return s
 end
 
 -- not used
