@@ -1,6 +1,5 @@
 --[[ 
 todo
-roman numerals (april fool's) w/ no-fun checkbox
 assure popup spreading in opposite directions for readability
 --]]
 
@@ -253,17 +252,19 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 --			else
 --				damage_string = string.format("%a",damage)
 --			end
-		if math.log(damage,10) > 10 then
-			if DECIMAL_ACCURACY > 1 then
-				damage_string = string.format("%." .. tostring(DECIMAL_ACCURACY) .. "g",damage) -- shortest representation (float or exp)
-			else
-				damage_string = string.format("%.1g",damage)
-			end
 		else
-			if DECIMAL_ACCURACY > 1 then
-				damage_string = string.format("%0." .. tostring(DECIMAL_ACCURACY - 1) .. "f",damage) 
+			if math.log(damage,10) > 10 then
+				if DECIMAL_ACCURACY > 1 then
+					damage_string = string.format("%." .. tostring(DECIMAL_ACCURACY) .. "g",damage) -- shortest representation (float or exp)
+				else
+					damage_string = string.format("%.1g",damage)
+				end
 			else
-				damage_string = string.format("%d",damage)
+				if DECIMAL_ACCURACY > 1 then
+					damage_string = string.format("%0." .. tostring(DECIMAL_ACCURACY - 1) .. "f",damage)
+				else
+					damage_string = string.format("%d",damage)
+				end
 			end
 		end
 		
