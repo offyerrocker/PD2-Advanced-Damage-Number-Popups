@@ -334,6 +334,7 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 				position = hit_position,
 				--anim_attach = attach_thread,
 				--anim_fadeout = fadeout_thread,
+				--anim_pulse = nil,
 				start_t = t,
 				ukey = ukey, -- identifier for the hit unit specifically; only used for checking damage grouping
 				key = tbl_key, -- lookup key to self._popup_instances for this instance (can be changed post init; do not assume final)
@@ -363,10 +364,13 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 			popup_instance.anim_attach = popup_instance.panel:animate(self.animate_attach_body,nil,popup_instance)
 		end
 		
-		if alive(popup_instance.text) then
+		if headshot and alive(popup_instance.text) then
+			if popup_instance.anim_pulse then
+				popup_instance.text:stop(popup_instance.anim_pulse)
+			end
 			local to = tweak_data.hud.medium_deafult_font_size
 			local from = to * SETTING_FONTSIZE_PULSE_MULTIPLIER
-			popup_instance.text:animate(self.animate_text_size_grow,nil,popup_instance,from,to,SETTING_FONTSIZE_PULSE_DURATION)
+			popup_instance.anim_pulse = popup_instance.text:animate(self.animate_text_size_grow,nil,popup_instance,from,to,SETTING_FONTSIZE_PULSE_DURATION)
 		end
 		
 		popup_instance.anim_fadeout = popup_instance.panel:animate(self.animate_popup_fadeout,cb_done,popup_instance,POPUP_HOLD_DURATION,POPUP_FADE_DURATION,nil,nil)
