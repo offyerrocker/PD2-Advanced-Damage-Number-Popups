@@ -1,28 +1,37 @@
 --[[ 
 todo
 assure popup spreading in opposite directions for readability
+
+speed var setting
+position offset setting (angle variance for spread)
+master enable setting
 --]]
-
-
 
 
 
 ODamagePopups = {
 	settings = {
-		use_raw_damage = true,
-		mode_damage_aggregate = 2, -- controls how multiple damage instances on a single enemy are displayed: 1) none (all separate popups); 2) aggregate by enemy (any hit location); 3) aggregate by enemy and hit body
-		use_damage_type_icon = false,
-		use_player_only = true,
-		mode_damage_style = 5, -- 1) spawn at body. 2) hit position only; 3) borderlands-style rain; 4) xiv style flytext; 5) destiny 2 style left/right splits
-		use_sticky_body_position = false, -- if true, damage popups are always tethered/relative to the body position; if false, the damage popups may spawn at the hit position, but position does not follow the body position
-		damage_decimal_accuracy = 2, -- number of digits after the decimal point to show in damage numbers
-		damage_group_threshold = 1.0, -- hits must be within this many seconds from first hit to count in the same damage stack group (0 for infinite)
-		damage_hide_zero_damage_hits = false, -- if true, hits that deal exactly 0 damage will not be shown
-		popup_hold_duration = 0.66,
-		popup_fade_duration = 0.33,
-		popup_pulse_fontsize_mul = 2.0,
-		popup_pulse_fontsize_duration = 2.0, 
-		fun_allowed = 2, -- april fool's control; 1=always,2=seasonal,3=never
+--		general_master_enabled = true,
+		general_fun_allowed = 2, -- april fool's control; 1=always,2=seasonal,3=never
+		general_use_raw_damage = true,
+		general_use_player_damage_only = true,
+		general_hide_zero_damage_hits = false, -- if true, hits that deal exactly 0 damage will not be shown
+		general_damage_decimal_accuracy = 2, -- number of digits after the decimal point to show in damage numbers
+		
+		group_damage_aggregate_mode = 2, -- controls how multiple damage instances on a single enemy are displayed: 1) none (all separate popups); 2) aggregate by enemy (any hit location); 3) aggregate by enemy and hit body
+		group_damage_time_window = 1.0, -- hits must be within this many seconds from first hit to count in the same damage stack group (0 for infinite)
+
+		
+		appearance_use_damage_type_icon = false,
+		appearance_popup_style = 1, -- 1) spawn at hit position. 2) borderlands-style rain; 3) xiv style flytext; 4) destiny 2 style left/right splits
+		appearance_use_body_relative_position = false, -- if true, damage popups are always tethered/relative to the body position; if false, the damage popups may spawn at the hit position, but position does not follow the body position
+		appearance_popup_hold_duration = 0.66,
+		appearance_popup_fade_duration = 0.33,
+		appearance_popup_font_custom_enabled = false,
+		appearance_popup_font_size = 28.0, -- font size
+		appearance_popup_font_name = "", --tweak_data.hud.medium_font, -- font name
+		appearance_popup_fontsize_pulse_mul = 2.0,
+		appearance_popup_fontsize_pulse_duration = 2.0, 
 		
 		colors_packed = {
 			bullet    = 0xffffff,
@@ -30,7 +39,7 @@ ODamagePopups = {
 			poison    = 0x6bf91e,
 			fire      = 0xf93f1e,
 			explosion = 0xf9e51e,
-			tase = 0x359bf4,
+			tase      = 0x359bf4,
 --			0xf9781e,
 			misc      = 0x1eb1f9
 		}
@@ -83,9 +92,9 @@ function ODamagePopups:OnLoad()
 	self:CheckHUD()
 	
 	-- april fool's check
-	if self.settings.fun_allowed == 1 then
+	if self.settings.general_fun_allowed == 1 then
 		self._fun_allowed = true
-	elseif self.settings.fun_allowed == 2 then
+	elseif self.settings.general_fun_allowed == 2 then
 		local today = os.date("*t",os.time())
 		self._fun_allowed = today.month == 4 and today.day == 1
 	else -- 3 or fallback
@@ -104,21 +113,23 @@ end
 
 function ODamagePopups:CreateDamagePopup(damage_info)
 	local attacker_unit = damage_info.attacker_unit
-	local SETTING_DAMAGE_TYPE_ICON = self.settings.use_damage_type_icon
-	local SETTING_RAW_DAMAGE = self.settings.use_raw_damage
+	local SETTING_DAMAGE_TYPE_ICON = self.settings.appearance_use_damage_type_icon
+	local SETTING_RAW_DAMAGE = self.settings.general_use_raw_damage
 	--local SETTING_DAMAGE_STACKING = self.settings.use_stack_damage
-	local SETTING_DAMAGE_STACKING = self.settings.mode_damage_aggregate
-	local SETTING_PLAYER_ONLY = self.settings.use_player_only
-	local SETTING_POPUP_STYLE = self.settings.mode_damage_style
-	local POPUP_HOLD_DURATION = self.settings.popup_hold_duration
-	local POPUP_FADE_DURATION = self.settings.popup_fade_duration
-	local SETTING_POPUP_STICKY = self.settings.use_sticky_body_position
-	local SETTING_HIDE_ZERO_DAMAGE_HITS = self.settings.damage_hide_zero_damage_hits
-	local DECIMAL_ACCURACY = self.settings.damage_decimal_accuracy -- should be an int
-	local SETTING_DAMAGE_STACKING_TIME_GROUP_THRESHOLD = self.settings.damage_group_threshold 
+	local SETTING_DAMAGE_STACKING = self.settings.group_damage_aggregate_mode
+	local SETTING_PLAYER_ONLY = self.settings.general_use_player_damage_only
+	local SETTING_POPUP_STYLE = self.settings.appearance_popup_style
+	local POPUP_HOLD_DURATION = self.settings.appearance_popup_hold_duration
+	local POPUP_FADE_DURATION = self.settings.appearance_popup_fade_duration
+	local SETTING_POPUP_STICKY = self.settings.appearance_use_body_relative_position
+	local SETTING_HIDE_ZERO_DAMAGE_HITS = self.settings.general_hide_zero_damage_hits
+	local DECIMAL_ACCURACY = self.settings.general_damage_decimal_accuracy -- should be an int
+	local SETTING_DAMAGE_STACKING_TIME_GROUP_THRESHOLD = self.settings.group_damage_time_window 
 	
-	local SETTING_FONTSIZE_PULSE_DURATION = self.settings.popup_pulse_fontsize_duration
-	local SETTING_FONTSIZE_PULSE_MULTIPLIER = self.settings.popup_pulse_fontsize_mul
+	local SETTING_FONTSIZE_PULSE_DURATION = self.settings.appearance_popup_fontsize_pulse_duration
+	local SETTING_FONTSIZE_PULSE_MULTIPLIER = self.settings.appearance_popup_fontsize_pulse_mul
+	local SETTING_FONT_NAME = self.settings.appearance_popup_font_custom_enabled and self.settings.appearance_popup_font_name or tweak_data.hud.medium_font
+	local SETTING_FONT_SIZE = self.settings.appearance_popup_font_size or tweak_data.hud.medium_deafult_font_size
 	
 	if not alive(attacker_unit) then
 		return
@@ -143,7 +154,7 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 			return
 		end
 		
-		damage = damage * 10 -- display only
+		damage = damage * 10 -- displayed health/damage numbers are 10x their internal values. why? good question
 		
 		local name = damage_info.name
 		local body = col_ray.body
@@ -315,8 +326,8 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 			local text = panel:text({
 				name = "text",
 				text = damage_string,
-				font = tweak_data.hud.medium_font,
-				font_size = tweak_data.hud.medium_deafult_font_size, -- this typo is intended and accurate to the tweakdata
+				font = SETTING_FONT_NAME, --tweak_data.hud.medium_font,
+				font_size = SETTING_FONT_SIZE, --tweak_data.hud.medium_deafult_font_size, -- this typo is intended and accurate to the tweakdata
 				layer = layer,
 				color = color,
 				alpha = 1,
@@ -493,7 +504,7 @@ function ODamagePopups.animate_attach_body(o,cb_done,data)
 	local viewport_cam = managers.viewport:get_current_camera()
 	local ws = data.workspace
 	while true do 
-		if alive(body) and ODamagePopups.settings.use_sticky_body_position then
+		if alive(body) and ODamagePopups.settings.appearance_use_body_relative_position then
 			mvector3.set(world_pos,body:oobb():center())
 		end
 		mvector3.set(cam_fwd_vec,viewport_cam:rotation():y())
@@ -532,7 +543,7 @@ function ODamagePopups.animate_attach_vault(o,cb_done,data,fly_speed)
 	local ws = data.workspace
 	local dt = 0
 	while true do 
-		if alive(body) and ODamagePopups.settings.use_sticky_body_position then
+		if alive(body) and ODamagePopups.settings.appearance_use_body_relative_position then
 			mvector3.set(world_pos,body:oobb():center())
 		end
 		mvector3.set(cam_fwd_vec,viewport_cam:rotation():y())
@@ -576,7 +587,7 @@ function ODamagePopups.animate_attach_xiv(o,cb_done,data,fly_speed)
 	while true do 
 		y = y - (fly_speed * dt)
 		
-		if alive(body) and ODamagePopups.settings.use_sticky_body_position then
+		if alive(body) and ODamagePopups.settings.appearance_use_body_relative_position then
 			mvector3.set(world_pos,body:oobb():center())
 		end
 		mvector3.set(cam_fwd_vec,viewport_cam:rotation():y())
@@ -636,7 +647,7 @@ function ODamagePopups.animate_attach_destiny(o,cb_done,data,fly_speed,decay)
 	while true do 
 		mvector3.set(cam_fwd_vec,viewport_cam:rotation():y())
 		mvector3.set(pos_dir_vec,viewport_cam:position())
-		if alive(body) and ODamagePopups.settings.use_sticky_body_position then
+		if alive(body) and ODamagePopups.settings.appearance_use_body_relative_position then
 			mvector3.set(world_pos,body:oobb():center())
 		end
 		mvector3.subtract(pos_dir_vec,world_pos)
