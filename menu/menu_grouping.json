@@ -1,0 +1,41 @@
+{
+	"menu_id" : "menu_odp_options_grouping",
+	"parent_menu_id" : "menu_odp_options_main",
+	"title" : "menu_odp_options_grouping_title",
+	"items" : [
+		{
+			"type" : "multiple_choice",
+			"id" : "menu_odp_group_damage_aggregate_mode",
+			"title" : "menu_odp_group_damage_aggregate_mode_title",
+			"description" : "menu_odp_group_damage_aggregate_mode_desc",
+			"callback" : "callback_odp_group_damage_aggregate_mode",
+			"items" : [
+				"odp_group_damage_aggregate_mode_none",
+				"odp_group_damage_aggregate_mode_unit",
+				"odp_group_damage_aggregate_mode_bodyunit"
+			],
+			"value" : "group_damage_aggregate_mode"
+		},
+		{
+			"type" : "slider",
+			"id" : "menu_odp_group_damage_time_window",
+			"title" : "menu_odp_group_damage_time_window_title",
+			"description" : "menu_odp_group_damage_time_window_desc",
+			"callback" : "callback_odp_group_damage_time_window",
+			"value" : "group_damage_time_window",
+			"default_value" : 1,
+			"show_value" : "true",
+			"min" : 0,
+			"max" : 5,
+			"step" : 0.5
+		},
+		{
+			"type" : "toggle",
+			"id" : "menu_odp_group_damage_use_refresh",
+			"title" : "menu_odp_group_damage_use_refresh_title",
+			"description" : "menu_odp_group_damage_use_refresh_desc",
+			"callback" : "callback_odp_group_damage_use_refresh",
+			"value" : "group_damage_use_refresh"
+		}
+	]
+}

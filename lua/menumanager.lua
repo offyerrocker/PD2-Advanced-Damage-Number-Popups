@@ -5,6 +5,10 @@ assure popup spreading in opposite directions for readability
 speed var setting
 position offset setting (angle variance for spread)
 master enable setting
+
+colorpicker: (suggested) default palettes
+
+warframe damage numbers?
 --]]
 
 
@@ -20,7 +24,7 @@ ODamagePopups = {
 		
 		group_damage_aggregate_mode = 2, -- controls how multiple damage instances on a single enemy are displayed: 1) none (all separate popups); 2) aggregate by enemy (any hit location); 3) aggregate by enemy and hit body
 		group_damage_time_window = 1.0, -- hits must be within this many seconds from first hit to count in the same damage stack group (0 for infinite)
-
+		group_damage_use_refresh = true, -- if true, refresh time window on hit; if false, only count seconds from first hit
 		
 		appearance_use_damage_type_icon = false,
 		appearance_popup_style = 1, -- 1) spawn at hit position. 2) borderlands-style rain; 3) xiv style flytext; 4) destiny 2 style left/right splits
@@ -33,6 +37,33 @@ ODamagePopups = {
 		appearance_popup_fontsize_pulse_mul = 2.0,
 		appearance_popup_fontsize_pulse_duration = 2.0, 
 		
+		palettes = {
+			"ff0000",
+			"ffff00",
+			"00ff00",
+			"00ffff",
+			"0000ff",
+			"880000",
+			"888800",
+			"008800",
+			"008888",
+			"000088",
+			"ff8800",
+			"88ff00",
+			"00ff88",
+			"0088ff",
+			"8800ff",
+			"884400",
+			"448800",
+			"008844",
+			"004488",
+			"440088",
+			"ffffff",
+			"bbbbbb",
+			"888888",
+			"444444",
+			"000000"
+		},
 		colors_packed = {
 			bullet    = 0xffffff,
 			melee     = 0xd41ef9,
@@ -45,9 +76,12 @@ ODamagePopups = {
 		}
 	},
 	_mod_path = ModPath,
-	_menu_path = ModPath .. "menu/menu.json",
+	_menu_path = ModPath .. "menu/",
 	_save_path = SavePath .. "odamagepopups_settings.json",
 	_default_loc_path = ModPath .. "l10n/english.json",
+	_menu_main_id = "menu_odp_options_main",
+	_COLORPICKER_URL = "https://modworkshop.net/mod/29641",
+	_QKI_URL = "https://pd2mods.z77.fr/quick_keyboard_input.html",
 	
 	_colors = {}, -- list of unpacked colors
 	_popup_instances = {}, -- table, keyed by [string unitkey]
@@ -59,7 +93,7 @@ ODamagePopups = {
 function ODamagePopups:UnpackColors()
 	-- unpack colors
 	for id,color_dec in pairs(self.settings.colors_packed) do 
-		local color_str = string.format("%x",color_dec)
+		local color_str = string.format("%06x",color_dec)
 		self._colors[id] = Color(color_str)
 	end
 end
@@ -125,6 +159,7 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 	local SETTING_HIDE_ZERO_DAMAGE_HITS = self.settings.general_hide_zero_damage_hits
 	local DECIMAL_ACCURACY = self.settings.general_damage_decimal_accuracy -- should be an int
 	local SETTING_DAMAGE_STACKING_TIME_GROUP_THRESHOLD = self.settings.group_damage_time_window 
+	local SETTING_DAMAGE_STACKING_TIME_REFRESH_ENABLED = self.settings.group_damage_use_refresh
 	
 	local SETTING_FONTSIZE_PULSE_DURATION = self.settings.appearance_popup_fontsize_pulse_duration
 	local SETTING_FONTSIZE_PULSE_MULTIPLIER = self.settings.appearance_popup_fontsize_pulse_mul
@@ -297,6 +332,10 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 			end
 			popup_instance.body = body or popup_instance.body 
 			popup_instance.damage = damage
+			
+			if SETTING_DAMAGE_STACKING_TIME_REFRESH_ENABLED then 
+				popup_instance.start_t = t
+			end
 		else
 			local panel = parent_panel:panel({
 				name = "damage_popup_" .. tostring(damage_info),
@@ -754,21 +793,313 @@ end
 
 
 Hooks:Add("LocalizationManagerPostInit", "odp_LocalizationManagerPostInit", function(loc)
-	if not BeardLib then
+	if true or not BeardLib then
 		loc:load_localization_file(ODamagePopups._default_loc_path)
 	end
 end)
 
+
+Hooks:Add("MenuManagerSetupCustomMenus", "odp_MenuManagerSetupCustomMenus", function(menu_manager, nodes)
+	MenuHelper:NewMenu(ODamagePopups._menu_main_id)
+end)
+
+-- not used
+--Hooks:Add("MenuManagerPopulateCustomMenus", "odp_MenuManagerPopulateCustomMenus", function(menu_manager, nodes) end)
+
+Hooks:Add("MenuManagerBuildCustomMenus", "odp_MenuManagerBuildCustomMenus", function( menu_manager, nodes )
+	--create main menu
+	nodes[ODamagePopups._menu_main_id] = MenuHelper:BuildMenu(
+		ODamagePopups._menu_main_id,{
+			area_bg = "none",
+			back_callback = nil,
+			focus_changed_callback = nil
+		}
+	)
+	MenuHelper:AddMenuItem(nodes.blt_options,ODamagePopups._menu_main_id,"menu_odp_options_main_title","menu_odp_options_main_desc")
+end)
+
 Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_manager)
-	MenuCallbackHandler.asdfasdf = function(self,item)
-		local value = item:value() == 'on'
-		--Olib.settings.olib_toggle_1 = value
-		--Olib:Save()
+	
+	-- GENERAL ---------------------------------------------------------------------------
+	
+	MenuCallbackHandler.callback_odp_general_fun_allowed = function(self,item)
+		local value = item:value()
+		ODamagePopups.settings.general_fun_allowed = value
+		ODamagePopups:SaveSettings()
 	end
+	MenuCallbackHandler.callback_odp_general_use_raw_damage = function(self,item)
+		local value = item:value() == "on"
+		ODamagePopups.settings.general_use_raw_damage = value
+		ODamagePopups:SaveSettings()
+	end
+	
+	
+	MenuCallbackHandler.callback_odp_general_use_player_damage_only = function(self,item)
+		local value = item:value() == "on"
+		ODamagePopups.settings.general_use_player_damage_only = value
+		ODamagePopups:SaveSettings()
+	end
+	MenuCallbackHandler.callback_odp_general_hide_zero_damage_hits = function(self,item)
+		local value = item:value() == "on"
+		ODamagePopups.settings.general_hide_zero_damage_hits = value
+		ODamagePopups:SaveSettings()
+	end
+	
+	MenuCallbackHandler.callback_odp_general_damage_decimal_accuracy = function(self,item)
+		local value = item:value()
+		ODamagePopups.settings.general_damage_decimal_accuracy = value
+		ODamagePopups:SaveSettings()
+	end
+	
+	
+	-- GROUPING ---------------------------------------------------------------------------
+	
+	MenuCallbackHandler.callback_odp_group_damage_aggregate_mode = function(self,item)
+		local value = item:value()
+		ODamagePopups.settings.group_damage_aggregate_mode = value
+		ODamagePopups:SaveSettings()
+	end
+	
+	MenuCallbackHandler.callback_odp_group_damage_time_window = function(self,item)
+		local value = item:value()
+		ODamagePopups.settings.group_damage_time_window = value
+		ODamagePopups:SaveSettings()
+	end
+	
+	MenuCallbackHandler.callback_odp_group_damage_use_refresh = function(self,item)
+		local value = item:value() == "on"
+		ODamagePopups.settings.group_damage_use_refresh = value
+		ODamagePopups:SaveSettings()
+	end
+	
+	
+	-- APPEARANCE ---------------------------------------------------------------------------
+	
+	MenuCallbackHandler.callback_odp_appearance_use_damage_type_icon = function(self,item)
+		local value = item:value() == "on"
+		ODamagePopups.settings.appearance_use_damage_type_icon = value
+		ODamagePopups:SaveSettings()
+	end
+	
+	MenuCallbackHandler.callback_odp_appearance_popup_style = function(self,item)
+		local value = item:value()
+		ODamagePopups.settings.appearance_popup_style = value
+		ODamagePopups:SaveSettings()
+	end
+	
+	MenuCallbackHandler.callback_odp_appearance_use_body_relative_position = function(self,item)
+		local value = item:value() == "on"
+		ODamagePopups.settings.appearance_use_body_relative_position = value
+		ODamagePopups:SaveSettings()
+	end
+	
+	
+	MenuCallbackHandler.callback_odp_appearance_popup_hold_duration = function(self,item)
+		local value = item:value()
+		ODamagePopups.settings.appearance_popup_hold_duration = value
+		ODamagePopups:SaveSettings()
+	end
+	
+	MenuCallbackHandler.callback_odp_appearance_popup_fade_duration = function(self,item)
+		local value = item:value()
+		ODamagePopups.settings.appearance_popup_fade_duration = value
+		ODamagePopups:SaveSettings()
+	end
+	
+	
+	
+	MenuCallbackHandler.callback_odp_appearance_popup_fontsize_pulse_mul = function(self,item)
+		local value = item:value()
+		ODamagePopups.settings.appearance_popup_fontsize_pulse_mul = value
+		ODamagePopups:SaveSettings()
+	end
+	
+	MenuCallbackHandler.callback_odp_appearance_popup_fontsize_pulse_duration = function(self,item)
+		local value = item:value()
+		ODamagePopups.settings.appearance_popup_fontsize_pulse_duration = value
+		ODamagePopups:SaveSettings()
+	end
+		-- appearance: customization
+	
+	
+	MenuCallbackHandler.callback_odp_appearance_popup_font_size = function(self,item)
+		local value = item:value()
+		ODamagePopups.settings.appearance_popup_font_size = value
+		ODamagePopups:SaveSettings()
+	end
+	
+	MenuCallbackHandler.callback_odp_quickkeyboardinput_custom_font_name = function(self,item)
+		ODamagePopups:ShowQKIMenu("font")
+	end
+		
+	
+	MenuCallbackHandler.callback_odp_appearance_popup_font_custom_enabled = function(self,item)
+		local value = item:value()
+		ODamagePopups.settings.appearance_popup_font_custom_enabled = value
+		ODamagePopups:SaveSettings()
+	end
+	
+	MenuCallbackHandler.callback_odp_colorpicker_customize_bullet = function(self,item)
+		ODamagePopups:ShowColorpickerMenu("bullet")
+	end
+	
+	MenuCallbackHandler.callback_odp_colorpicker_customize_melee = function(self,item)
+		ODamagePopups:ShowColorpickerMenu("melee")
+	end
+	
+	MenuCallbackHandler.callback_odp_colorpicker_customize_poison = function(self,item)
+		ODamagePopups:ShowColorpickerMenu("poison")
+	end
+	
+	MenuCallbackHandler.callback_odp_colorpicker_customize_fire = function(self,item)
+		ODamagePopups:ShowColorpickerMenu("fire")
+	end
+	
+	MenuCallbackHandler.callback_odp_colorpicker_customize_explosion = function(self,item)
+		ODamagePopups:ShowColorpickerMenu("explosion")
+	end
+	
+	MenuCallbackHandler.callback_odp_colorpicker_customize_tase = function(self,item)
+		ODamagePopups:ShowColorpickerMenu("tase")
+	end
+	
+	MenuCallbackHandler.callback_odp_colorpicker_customize_misc = function(self,item)
+		ODamagePopups:ShowColorpickerMenu("misc")
+	end
+	
 	ODamagePopups:LoadSettings()
+	MenuHelper:LoadFromJsonFile(ODamagePopups._menu_path .. "menu_general.json", ODamagePopups, ODamagePopups.settings)
+	MenuHelper:LoadFromJsonFile(ODamagePopups._menu_path .. "menu_appearance.json", ODamagePopups, ODamagePopups.settings)
+	MenuHelper:LoadFromJsonFile(ODamagePopups._menu_path .. "menu_grouping.json", ODamagePopups, ODamagePopups.settings)
 	--MenuHelper:LoadFromJsonFile(ODamagePopups._menu_path, ODamagePopups, ODamagePopups.settings)
 end)
 
+function ODamagePopups:CreateColorpicker()
+	if ColorPicker and not self._colorpicker then
+		self._colorpicker = ColorPicker:new(
+		--[[
+		{
+			color = Color.white,
+			palettes = {},
+			done_callback = nil,
+			changed_callback = nil
+		}--]]
+		)
+	end
+	return self._colorpicker
+end
+
+function ODamagePopups:ShowColorpickerMenu(id)
+	if not _G.ColorPicker then 
+		ODamagePopups:ShowColorpickerMissingDialog()
+		return
+	end
+	local colorpicker = self:CreateColorpicker()
+	if colorpicker then 
+		self:UnpackColors() -- just in case, re-process colors from strings in settings to Color objects
+		local color = assert(self._colors[id]) -- if id doesn't exist... we shouldn't be here
+		colorpicker:Show({
+			color = color,
+			palettes = self:GetPaletteColors(),
+			done_callback = callback(self,self,"callback_colorpicker_confirm",id),
+			changed_callback = nil
+		})
+	end
+end
+
+function ODamagePopups:ShowQKIMissingDialog()
+	QuickMenu:new(
+		managers.localization:text("menu_odp_dialog_missing_colorpicker_title"),
+		managers.localization:text("menu_odp_dialog_missing_colorpicker_desc",
+			{
+				URL = self._QKI_URL,
+				PATH = self._save_path
+			}
+		),
+		{
+			{
+				text = managers.localization:text("menu_ok"),
+				is_cancel_button = true,
+				is_focused_button = true
+			}
+		},
+		true
+	)
+end
+
+function ODamagePopups:ShowColorpickerMissingDialog()
+	QuickMenu:new(
+		managers.localization:text("menu_odp_dialog_missing_colorpicker_title"),
+		managers.localization:text("menu_odp_dialog_missing_colorpicker_desc",
+			{
+				URL = self._COLORPICKER_URL,
+				PATH = self._save_path
+			}
+		),
+		{
+			{
+				text = managers.localization:text("menu_ok"),
+				is_cancel_button = true,
+				is_focused_button = true
+			}
+		},
+		true
+	)
+end
+
+function ODamagePopups:callback_qki_confirm(id,text)
+	self.settings.appearance_popup_font_name = text
+	self:SaveSettings()
+end
+
+function ODamagePopups:callback_colorpicker_confirm(id,color,palettes,success)
+	if success then 
+		self.settings.colors_packed[id] = tonumber("0x" .. ColorPicker.color_to_hex(color),16)
+	end
+	
+	if palettes then
+		self:SetPaletteCodes(palettes)
+	end
+	
+	if success or palettes then 
+		self:SaveSettings()
+	end
+end
+
+function ODamagePopups:GetPaletteColors()
+	local result = {}
+	for i,hex in ipairs(self.settings.palettes) do 
+		result[i] = Color(hex)
+	end
+	return result
+	
+end
+
+function ODamagePopups:SetPaletteCodes(tbl)
+	if type(tbl) == "table" then 
+		for i,color in ipairs(tbl) do 
+			self.settings.palettes[i] = ColorPicker.color_to_hex(color)
+		end
+	else
+		log("Error: SetPaletteCodes(" .. tostring(tbl) .. ") Bad palettes table from ColorPicker callback")
+	end
+end
+
+function ODamagePopups:ShowQKIMenu(id)
+	if _G.QuickKeyboardInput then
+		_G.QuickKeyboardInput:new(
+			managers.localization:text("menu_odp_dialog_custom_font_title"),
+			managers.localization:text("menu_odp_dialog_custom_font_desc"),
+			{
+				default_value = self.settings.appearance_popup_font_name or "",
+				changed_callback = callback(self,self,"callback_qki_confirm",id)
+			},
+			true
+		)
+	else
+		self:ShowQKIMissingDialog()
+	end
+end
 
 -- load default colors just in case the menu hook is somehow executed after the game hook
 ODamagePopups:UnpackColors()

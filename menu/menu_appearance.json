@@ -1,85 +1,8 @@
 {
-	"menu_id" : "menu_odp_options_main",
-	"parent_menu_id" : "blt_options",
-	"title" : "menu_odp_options_title",
+	"menu_id" : "menu_odp_options_appearance",
+	"parent_menu_id" : "menu_odp_options_main",
+	"title" : "menu_odp_options_appearance_title",
 	"items" : [
-		{
-			"type" : "multiple_choice",
-			"id" : "menu_odp_general_fun_allowed",
-			"title" : "menu_odp_general_fun_allowed_title",
-			"description" : "menu_odp_general_fun_allowed_desc",
-			"callback" : "callback_odp_general_fun_allowed",
-			"items" : [
-				"odp_fun_allowed_always",
-				"odp_fun_allowed_seasonal",
-				"odp_fun_allowed_never"
-			],
-			"value" : "general_fun_allowed"
-		},
-		{
-			"type" : "toggle",
-			"id" : "menu_odp_general_use_raw_damage",
-			"title" : "menu_odp_general_use_raw_damage_title",
-			"description" : "menu_odp_general_use_raw_damage_desc",
-			"callback" : "callback_odp_general_use_raw_damage",
-			"value" : "general_use_raw_damage"
-		},
-		{
-			"type" : "toggle",
-			"id" : "menu_odp_general_use_player_damage_only",
-			"title" : "menu_odp_general_use_player_damage_only_title",
-			"description" : "menu_odp_general_use_player_damage_only_desc",
-			"callback" : "callback_odp_general_use_player_damage_only",
-			"value" : "general_use_player_damage_only"
-		},
-		{
-			"type" : "toggle",
-			"id" : "menu_odp_general_hide_zero_damage_hits",
-			"title" : "menu_odp_general_hide_zero_damage_hits_title",
-			"description" : "menu_odp_general_hide_zero_damage_hits_desc",
-			"callback" : "callback_odp_general_hide_zero_damage_hits",
-			"value" : "general_hide_zero_damage_hits"
-		},
-		{
-			"type" : "multiple_choice",
-			"id" : "menu_odp_general_damage_decimal_accuracy",
-			"title" : "menu_odp_general_damage_decimal_accuracy_title",
-			"description" : "menu_odp_general_damage_decimal_accuracy_desc",
-			"callback" : "callback_odp_general_damage_decimal_accuracy",
-			"items" : [
-				"odp_damage_decimal_accuracy_zero",
-				"odp_damage_decimal_accuracy_one",
-				"odp_damage_decimal_accuracy_two",
-				"odp_damage_decimal_accuracy_three"
-			],
-			"value" : "general_damage_decimal_accuracy"
-		},
-		{
-			"type" : "multiple_choice",
-			"id" : "menu_odp_group_damage_aggregate_mode",
-			"title" : "menu_odp_group_damage_aggregate_mode_title",
-			"description" : "menu_odp_group_damage_aggregate_mode_desc",
-			"callback" : "callback_odp_group_damage_aggregate_mode",
-			"items" : [
-				"odp_group_damage_aggregate_mode_none",
-				"odp_group_damage_aggregate_mode_unit",
-				"odp_group_damage_aggregate_mode_bodyunit"
-			],
-			"value" : "group_damage_aggregate_mode"
-		},
-		{
-			"type" : "slider",
-			"id" : "menu_odp_group_damage_time_window",
-			"title" : "menu_odp_group_damage_time_window_title",
-			"description" : "menu_odp_group_damage_time_window_desc",
-			"callback" : "callback_odp_group_damage_time_window",
-			"value" : "group_damage_time_window",
-			"default_value" : 1,
-			"show_value" : "true",
-			"min" : 0,
-			"max" : 5,
-			"step" : 0.5
-		},
 		{
 			"type" : "toggle",
 			"id" : "menu_odp_appearance_use_damage_type_icon",
@@ -136,18 +59,6 @@
 		},
 		{
 			"type" : "slider",
-			"id" : "menu_odp_appearance_popup_fontsize_float",
-			"title" : "menu_odp_appearance_popup_fontsize_float_title",
-			"description" : "menu_odp_appearance_popup_fontsize_float_desc",
-			"callback" : "callback_odp_appearance_popup_fontsize_float",
-			"value" : "appearance_popup_fontsize_float",
-			"default_value" : 2.0,
-			"min" : 0,
-			"max" : 3,
-			"step" : 0.1
-		},
-		{
-			"type" : "slider",
 			"id" : "menu_odp_appearance_popup_fontsize_pulse_mul",
 			"title" : "menu_odp_appearance_popup_fontsize_pulse_mul_title",
 			"description" : "menu_odp_appearance_popup_fontsize_pulse_mul_desc",
@@ -182,6 +93,7 @@
 			"description" : "menu_odp_quickkeyboardinput_custom_font_name_desc",
 			"callback" : "callback_odp_quickkeyboardinput_custom_font_name"
 		},
+		
 		{
 			"type" : "slider",
 			"id" : "menu_odp_appearance_popup_font_size",
@@ -189,10 +101,10 @@
 			"description" : "menu_odp_appearance_popup_font_size_desc",
 			"callback" : "callback_odp_appearance_popup_font_size",
 			"value" : "appearance_popup_font_size",
-			"default_value" : 2.0,
-			"min" : 0,
-			"max" : 3,
-			"step" : 0.1
+			"default_value" : 28,
+			"min" : 1,
+			"max" : 64,
+			"step" : 8
 		},
 		{
 			"type" : "toggle",
