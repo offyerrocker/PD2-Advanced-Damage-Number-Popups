@@ -1,2 +1,4 @@
-# PD2-Offy-Damage-Popups
-A mod for PAYDAY 2 that adds damage number popups
+# Advanced Damage Number Popups
+A mod for PAYDAY 2 that adds damage number popups.
+
+todo settings descriptions with demo images/gifs
