@@ -2,7 +2,7 @@
 	"name" : "Offy's Damage Popups",
 	"description" : "Show damage popups, with a variety of options.",
 	"author" : "Offyerrocker",
-	"contact" : "Find me in the MWS Discord: https://discord.gg/Eear4JW",
+	"contact" : "https://modworkshop.net/mod/54179",
 	"version" : "1.0.0",
 	"image" : "icon.png",
 	"blt_version" : 2,
