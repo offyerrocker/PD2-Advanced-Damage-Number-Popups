@@ -4,7 +4,9 @@
 	"menu_odp_options_grouping_title" : "Damage Grouping Settings",
 	"menu_odp_options_appearance_title" : "Style and Appearance Settings",
 	"menu_odp_options_general_title" : "General Settings",
-		
+	
+	"menu_odp_general_master_enabled_title" : "Enabled",
+	"menu_odp_general_master_enabled_desc" : "Enable or disable popups from this mod.",
 	"menu_odp_general_fun_allowed_title" : "Fun Allowed",
 	"menu_odp_general_fun_allowed_desc" : "Enables some silly April Fool's effects.",
 	"menu_odp_general_use_raw_damage_title" : "Use Raw Damage",
@@ -26,18 +28,18 @@
 	"menu_odp_appearance_popup_style_title" : "Popup Style",
 	"menu_odp_appearance_popup_style_desc" : "Choose how the damage popup is animated.",
 	"menu_odp_appearance_use_body_relative_position_title" : "Use Body Relative Position",
-	"menu_odp_appearance_use_body_relative_position_desc" : "If true, popups will move with the hit unit. If false, popups will move relative to their spawn position.",
+	"menu_odp_appearance_use_body_relative_position_desc" : "If true, popups will move alongside the hit unit.\nIf false, popups will only move relative to their initial positions.",
 	"menu_odp_appearance_popup_hold_duration_title" : "Initial Duration",
 	"menu_odp_appearance_popup_hold_duration_desc" : "How long the popup stays fully visible, before starting to disappear",
 	"menu_odp_appearance_popup_fade_duration_title" : "Fadeout Duration",
 	"menu_odp_appearance_popup_fade_duration_desc" : "How long it takes for the popup to fully disappear, after the initial duration",
 	"menu_odp_appearance_popup_fontsize_pulse_mul_title" : "Headshot Size Multiplier",
 	"menu_odp_appearance_popup_fontsize_pulse_mul_desc" : "The size of the popup's growth animation on headshot.",
-	"menu_odp_appearance_popup_fontsize_pulse_duration_title" : "Headshot Duration Multiplier",
-	"menu_odp_appearance_popup_fontsize_pulse_duration_desc" : "The speed of the popup's growth animation on headshot",
+	"menu_odp_appearance_popup_fontsize_pulse_duration_title" : "Headshot Pulse Duration",
+	"menu_odp_appearance_popup_fontsize_pulse_duration_desc" : "The duration of the popup's growth animation on headshot",
 	"menu_odp_appearance_popup_font_custom_enabled_title" : "Enable Custom Font",
-	"menu_odp_appearance_popup_font_custom_enabled_desc" : "If true, use an existing custom font (below) for damage number text.",
-	"menu_odp_quickkeyboardinput_custom_font_name_title" : "Enter Custom Font",
+	"menu_odp_appearance_popup_font_custom_enabled_desc" : "If true, specify another existing font (below) to use for damage number text.",
+	"menu_odp_quickkeyboardinput_custom_font_name_title" : "Set Custom Font...",
 	"menu_odp_quickkeyboardinput_custom_font_name_desc" : "Click to enter the path to your custom font. Requires QuickKeyboardInput.",
 	"menu_odp_appearance_popup_font_size_title" : "Text Font Size",
 	"menu_odp_appearance_popup_font_size_desc" : "Adjust how large the damage popup text will be",
@@ -68,8 +70,9 @@
 	
 	"odp_popup_style_hitpos" : "Hit Position",
 	"odp_popup_style_vault" : "Vault Hunter",
-	"odp_popup_style_destiny" : "Guardian",
 	"odp_popup_style_xiv" : "Warrior of Light",
+	"odp_popup_style_destiny" : "Guardian",
+	"odp_popup_style_tenno" : "Tenno",
 	
 	"odp_group_damage_aggregate_mode_none" : "None",
 	"odp_group_damage_aggregate_mode_unit" : "Unit",
@@ -80,5 +83,5 @@
 	"menu_odp_dialog_missing_qki_title" : "Missing Dependency",
 	"menu_odp_dialog_missing_qki_desc" : "You need QuickKeyboardInput to use this feature! You can download it from here: $URL",
 	"menu_odp_dialog_custom_font_title" : "Enter Custom Font",
-	"menu_odp_dialog_custom_font_desc" : "Type the path to the font resource here. Example:\nfonts/font_medium_mf\nThe font must already be loaded to be used; this mod will not do it for you. Do not include quotation marks, file extensions, or the mods folder."
+	"menu_odp_dialog_custom_font_desc" : "Type the path to the font resource here.\n- The font must already be loaded to be used; this mod will not do it for you.\n- Do not include quotation marks, file extensions, or the mods folder.\nExample:\nfonts/font_eurostile_ext\nPress $BTN_CONFIRM to confirm, or $BTN_CANCEL to cancel.\n------------------------"
 }

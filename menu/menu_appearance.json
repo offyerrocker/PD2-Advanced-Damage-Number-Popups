@@ -4,12 +4,12 @@
 	"title" : "menu_odp_options_appearance_title",
 	"items" : [
 		{
-			"type" : "toggle",
-			"id" : "menu_odp_appearance_use_damage_type_icon",
-			"title" : "menu_odp_appearance_use_damage_type_icon_title",
-			"description" : "menu_odp_appearance_use_damage_type_icon_desc",
-			"callback" : "callback_odp_appearance_use_damage_type_icon",
-			"value" : "appearance_use_damage_type_icon"
+			"DISABLED_type" : "toggle",
+			"DISABLED_id" : "menu_odp_appearance_use_damage_type_icon",
+			"DISABLED_title" : "menu_odp_appearance_use_damage_type_icon_title",
+			"DISABLED_description" : "menu_odp_appearance_use_damage_type_icon_desc",
+			"DISABLED_callback" : "callback_odp_appearance_use_damage_type_icon",
+			"DISABLED_value" : "appearance_use_damage_type_icon"
 		},
 		{
 			"type" : "multiple_choice",
@@ -20,8 +20,8 @@
 			"items" : [
 				"odp_popup_style_hitpos",
 				"odp_popup_style_vault",
-				"odp_popup_style_destiny",
-				"odp_popup_style_xiv"
+				"odp_popup_style_xiv",
+				"odp_popup_style_destiny"
 			],
 			"value" : "appearance_popup_style"
 		},
@@ -32,6 +32,11 @@
 			"description" : "menu_odp_appearance_use_body_relative_position_desc",
 			"callback" : "callback_odp_appearance_use_body_relative_position",
 			"value" : "appearance_use_body_relative_position"
+		},
+		{
+			"id" : "menu_odp_div_appearance_1",
+			"type" : "divider",
+			"size" : 8
 		},
 		{
 			"type" : "slider",
@@ -58,6 +63,11 @@
 			"step" : 0.1
 		},
 		{
+			"id" : "menu_odp_div_appearance_2",
+			"type" : "divider",
+			"size" : 8
+		},
+		{
 			"type" : "slider",
 			"id" : "menu_odp_appearance_popup_fontsize_pulse_mul",
 			"title" : "menu_odp_appearance_popup_fontsize_pulse_mul_title",
@@ -82,18 +92,10 @@
 			"step" : 0.1
 		},
 		{
-			"id" : "menu_odp_div_1",
+			"id" : "menu_odp_div_appearance_3",
 			"type" : "divider",
 			"size" : 8
 		},
-		{
-			"type" : "button",
-			"id" : "menu_odp_quickkeyboardinput_custom_font_name",
-			"title" : "menu_odp_quickkeyboardinput_custom_font_name_title",
-			"description" : "menu_odp_quickkeyboardinput_custom_font_name_desc",
-			"callback" : "callback_odp_quickkeyboardinput_custom_font_name"
-		},
-		
 		{
 			"type" : "slider",
 			"id" : "menu_odp_appearance_popup_font_size",
@@ -107,12 +109,29 @@
 			"step" : 8
 		},
 		{
+			"id" : "menu_odp_div_appearance_4",
+			"type" : "divider",
+			"size" : 4
+		},
+		{
 			"type" : "toggle",
 			"id" : "menu_odp_appearance_popup_font_custom_enabled",
 			"title" : "menu_odp_appearance_popup_font_custom_enabled_title",
 			"description" : "menu_odp_appearance_popup_font_custom_enabled_desc",
 			"callback" : "callback_odp_appearance_popup_font_custom_enabled",
 			"value" : "appearance_popup_font_custom_enabled"
+		},
+		{
+			"type" : "button",
+			"id" : "menu_odp_quickkeyboardinput_custom_font_name",
+			"title" : "menu_odp_quickkeyboardinput_custom_font_name_title",
+			"description" : "menu_odp_quickkeyboardinput_custom_font_name_desc",
+			"callback" : "callback_odp_quickkeyboardinput_custom_font_name"
+		},
+		{
+			"id" : "menu_odp_div_appearance_5",
+			"type" : "divider",
+			"size" : 8
 		},
 		{
 			"type" : "button",

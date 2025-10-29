@@ -2,9 +2,11 @@
 todo
 assure popup spreading in opposite directions for readability
 
+unbound panel size to prevent possible clipping with very large glyphs
+teammate popup settings
+
 speed var setting
 position offset setting (angle variance for spread)
-master enable setting
 
 colorpicker: (suggested) default palettes
 
@@ -17,7 +19,7 @@ ODamagePopups = {
 	settings = {
 --		general_master_enabled = true,
 		general_fun_allowed = 2, -- april fool's control; 1=always,2=seasonal,3=never
-		general_use_raw_damage = true,
+		general_use_raw_damage = false,
 		general_use_player_damage_only = true,
 		general_hide_zero_damage_hits = false, -- if true, hits that deal exactly 0 damage will not be shown
 		general_damage_decimal_accuracy = 2, -- number of digits after the decimal point to show in damage numbers
@@ -25,17 +27,16 @@ ODamagePopups = {
 		group_damage_aggregate_mode = 2, -- controls how multiple damage instances on a single enemy are displayed: 1) none (all separate popups); 2) aggregate by enemy (any hit location); 3) aggregate by enemy and hit body
 		group_damage_time_window = 1.0, -- hits must be within this many seconds from first hit to count in the same damage stack group (0 for infinite)
 		group_damage_use_refresh = true, -- if true, refresh time window on hit; if false, only count seconds from first hit
-		
-		appearance_use_damage_type_icon = false,
+		appearance_use_damage_type_icon = false, -- deprecated because i think it's ugly
 		appearance_popup_style = 1, -- 1) spawn at hit position. 2) borderlands-style rain; 3) xiv style flytext; 4) destiny 2 style left/right splits
 		appearance_use_body_relative_position = false, -- if true, damage popups are always tethered/relative to the body position; if false, the damage popups may spawn at the hit position, but position does not follow the body position
-		appearance_popup_hold_duration = 0.66,
-		appearance_popup_fade_duration = 0.33,
+		appearance_popup_hold_duration = 0.4,
+		appearance_popup_fade_duration = 0.25,
 		appearance_popup_font_custom_enabled = false,
-		appearance_popup_font_size = 28.0, -- font size
-		appearance_popup_font_name = "", --tweak_data.hud.medium_font, -- font name
+		appearance_popup_font_size = 44.0, -- font size
+		appearance_popup_font_name = "fonts/font_eurostile_ext",
 		appearance_popup_fontsize_pulse_mul = 2.0,
-		appearance_popup_fontsize_pulse_duration = 2.0, 
+		appearance_popup_fontsize_pulse_duration = 0.42, 
 		
 		palettes = {
 			"ff0000",
@@ -146,6 +147,10 @@ end
 
 
 function ODamagePopups:CreateDamagePopup(damage_info)
+	if not self.settings.general_master_enabled then 
+		return
+	end
+	
 	local attacker_unit = damage_info.attacker_unit
 	local SETTING_DAMAGE_TYPE_ICON = self.settings.appearance_use_damage_type_icon
 	local SETTING_RAW_DAMAGE = self.settings.general_use_raw_damage
@@ -163,7 +168,7 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 	
 	local SETTING_FONTSIZE_PULSE_DURATION = self.settings.appearance_popup_fontsize_pulse_duration
 	local SETTING_FONTSIZE_PULSE_MULTIPLIER = self.settings.appearance_popup_fontsize_pulse_mul
-	local SETTING_FONT_NAME = self.settings.appearance_popup_font_custom_enabled and self.settings.appearance_popup_font_name or tweak_data.hud.medium_font
+	local SETTING_FONT_NAME = self.settings.appearance_popup_font_custom_enabled and self.settings.appearance_popup_font_name or tweak_data.menu.pd2_large_font
 	local SETTING_FONT_SIZE = self.settings.appearance_popup_font_size or tweak_data.hud.medium_deafult_font_size
 	
 	if not alive(attacker_unit) then
@@ -200,7 +205,7 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 		local variant = damage_info.variant
 		local killshot = result.type == "death"
 		
-		local t = Application:time()
+		local t = TimerManager:game():time()
 		local color_1 = Color.white
 		local color_2 = Color.black
 		local layer = 1
@@ -370,8 +375,8 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 				layer = layer,
 				color = color,
 				alpha = 1,
-				x = 18,
-				align = "left",
+				x = SETTING_DAMAGE_TYPE_ICON and 18 or 0,
+				align = "center",
 				vertical = "center",
 				valign = "grow",
 				halign = "grow",
@@ -399,14 +404,19 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 		
 		end
 		
+--		if alive(popup_instance.panel) then
+--			local x,y,w,h = popup_instance.text:text_rect() -- this will crash if used on a gui Text object with an invalid font, so... don't do that. stop having it be invalid
+--			popup_instance.panel:set_size(w + 4,h + 4)
+--		end
+		
 		-- note: "done callbacks" on the attach functions will never run, since those animations are designed to run indefinitely and will not naturally self-terminate
-		if SETTING_POPUP_STYLE == 3 then
-			-- vault
+		if SETTING_POPUP_STYLE == 2 then
+			-- bl2
 			popup_instance.anim_attach = popup_instance.panel:animate(self.animate_attach_vault,nil,popup_instance,100)
-		elseif SETTING_POPUP_STYLE == 4 then
+		elseif SETTING_POPUP_STYLE == 3 then
 			-- xiv
 			popup_instance.anim_attach = popup_instance.panel:animate(self.animate_attach_xiv,nil,popup_instance,100)	
-		elseif SETTING_POPUP_STYLE == 5 then
+		elseif SETTING_POPUP_STYLE == 4 then
 			-- destiny
 			popup_instance.anim_attach = popup_instance.panel:animate(self.animate_attach_destiny,nil,popup_instance,100,0.9)
 		else -- alive(body) and SETTING_POPUP_STYLE == 1 then
@@ -418,7 +428,7 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 			if popup_instance.anim_pulse then
 				popup_instance.text:stop(popup_instance.anim_pulse)
 			end
-			local to = tweak_data.hud.medium_deafult_font_size
+			local to = SETTING_FONT_SIZE
 			local from = to * SETTING_FONTSIZE_PULSE_MULTIPLIER
 			popup_instance.anim_pulse = popup_instance.text:animate(self.animate_text_size_grow,nil,popup_instance,from,to,SETTING_FONTSIZE_PULSE_DURATION)
 		end
@@ -505,35 +515,6 @@ function ODamagePopups.to_roman_numerals_str(n)
 	return s
 end
 
--- not used
-function ODamagePopups.animate_attach_position(o,cb_done,data)
-	local world_pos = data.position or Vector3()
-	local screen_pos = Vector3()
-	local cam_fwd_vec = Vector3()
-	local pos_dir_vec = Vector3()
-	local viewport_cam = managers.viewport:get_current_camera()
-	local ws = data.workspace
-	while true do 
-		mvector3.set(cam_fwd_vec,viewport_cam:rotation():y())
-		mvector3.set(pos_dir_vec,viewport_cam:position())
-		mvector3.subtract(pos_dir_vec,world_pos)
-		mvector3.normalize(pos_dir_vec)
-		if mvector3.dot(pos_dir_vec,cam_fwd_vec) < 0.5 then
-			screen_pos = ws:world_to_screen(viewport_cam,world_pos)
-			o:set_x(screen_pos.x)
-			o:set_center_y(screen_pos.y)
-		else
-			o:set_position(-1000,-1000)
-		end
-		
-		coroutine.yield()
-	end
-	
-	if cb_done then
-		cb_done(o,data)
-	end
-end
-
 function ODamagePopups.animate_attach_body(o,cb_done,data)
 	local body = data.body
 	local world_pos = data.position or Vector3()
@@ -552,8 +533,7 @@ function ODamagePopups.animate_attach_body(o,cb_done,data)
 		mvector3.normalize(pos_dir_vec)
 		if mvector3.dot(pos_dir_vec,cam_fwd_vec) < 0.5 then
 			screen_pos = ws:world_to_screen(viewport_cam,world_pos)
-			o:set_x(screen_pos.x)
-			o:set_center_y(screen_pos.y)
+			o:set_center(screen_pos.x,screen_pos.y)
 		else
 			o:set_position(-1000,-1000)
 		end
@@ -565,6 +545,7 @@ function ODamagePopups.animate_attach_body(o,cb_done,data)
 	end
 end
 
+-- simulates gravity on popups, and a semirandom direction vector
 function ODamagePopups.animate_attach_vault(o,cb_done,data,fly_speed)
 	-- spray in random direction depending on t
 	local t = Application:time()
@@ -591,8 +572,7 @@ function ODamagePopups.animate_attach_vault(o,cb_done,data,fly_speed)
 		mvector3.normalize(pos_dir_vec)
 		if mvector3.dot(pos_dir_vec,cam_fwd_vec) < 0.5 then
 			screen_pos = ws:world_to_screen(viewport_cam,world_pos)
-			o:set_x(screen_pos.x + offset_x)
-			o:set_center_y(screen_pos.y + offset_y)
+			o:set_center(screen_pos.x + offset_x,screen_pos.y + offset_y)
 		else
 			o:set_position(-1000,-1000)
 		end
@@ -636,8 +616,7 @@ function ODamagePopups.animate_attach_xiv(o,cb_done,data,fly_speed)
 		
 		if mvector3.dot(pos_dir_vec,cam_fwd_vec) < 0.5 then
 			screen_pos = ws:world_to_screen(viewport_cam,world_pos)
-			o:set_x(screen_pos.x)
-			o:set_center_y(screen_pos.y + y)
+			o:set_center(screen_pos.x,screen_pos.y + y)
 		else
 			o:set_position(-1000,-1000)
 		end
@@ -648,7 +627,6 @@ function ODamagePopups.animate_attach_xiv(o,cb_done,data,fly_speed)
 		cb_done(o,data)
 	end
 end
-
 
 -- moves horizontally with "friction"
 function ODamagePopups.animate_attach_destiny(o,cb_done,data,fly_speed,decay)
@@ -694,8 +672,7 @@ function ODamagePopups.animate_attach_destiny(o,cb_done,data,fly_speed,decay)
 		
 		if mvector3.dot(pos_dir_vec,cam_fwd_vec) < 0.5 then
 			screen_pos = ws:world_to_screen(viewport_cam,world_pos)
-			o:set_x(screen_pos.x + x)
-			o:set_center_y(screen_pos.y + y)
+			o:set_center(screen_pos.x + x,screen_pos.y + y)
 		else
 			o:set_position(-1000,-1000)
 		end
@@ -714,52 +691,35 @@ function ODamagePopups.animate_attach_destiny(o,cb_done,data,fly_speed,decay)
 	end
 end
 
+-- function ODamagePopups.animate_color_flash(o,cb_done,data,color1,color2) end
 
-function ODamagePopups.animate_color_flash(o,cb_done,data,color1,color2)
-end
-
-function ODamagePopups.animate_size_pulse(o,cb_done,data)
-end
-
--- not used
--- starts at from_size, grows to to_size, shrinks back to from_size
-function ODamagePopups.animate_text_size_pulse(o,cb_done,data,from_size,to_size,duration_max)
-	from_size = from_size or o:font_size()
-	to_size = to_size or (from_size * 1.5)
-	duration_max = duration_max or 1
-	local c_x,c_y = o:center()
-	local t = 0
-	local delta = to_size - from_size
-	local lerp = 0
-	local speed_mul = 4 * 360 / math.pi
-	while t < duration_max do
-		t = t + coroutine.yield()
-		local lerp = math.sin(t * speed_mul / duration_max)
-		o:set_font_size(from_size + delta * lerp * lerp)
-		o:set_center(c_x,c_y)
-	end
-	o:set_font_size(from_size)
-	o:set_center(c_x,c_y)
-end
-
--- starts at from_size, grows to to_size
+-- starts at from_size, grows (or shrinks) to to_size
+-- ONLY use on Text gui objects!
 function ODamagePopups.animate_text_size_grow(o,cb_done,data,from_size,to_size,duration_max)
 	from_size = from_size or o:font_size()
 	to_size = to_size or (from_size * 1.5)
 	duration_max = duration_max or 1
+--	local pw,ph = o:parent():size()
+--	local x,y,w,h = 0,0,0,0
 	local c_x,c_y = o:center()
 	local t = 0
 	local delta = to_size - from_size
 	local lerp = 0
-	local speed_mul = 2 * 360 / math.pi
+	local speed_mul = 90
 	while t < duration_max do
 		t = t + coroutine.yield()
-		local lerp = math.sin(t * speed_mul / duration_max)
+		lerp = math.sin(t * speed_mul / duration_max)
 		o:set_font_size(from_size + delta * lerp * lerp)
-		o:set_center(c_x,c_y)
+		--o:set_center(c_x,c_y)
+--		x,y,w,h = o:text_rect()
+--		o:set_x((pw - w) / 2)
 	end
-	o:set_font_size(from_size)
-	o:set_center(c_x,c_y)
+	o:set_font_size(to_size)
+	--o:set_center(c_x,c_y)
+	
+	if cb_done then
+		cb_done(o,data)
+	end
 end
 
 function ODamagePopups.animate_popup_fadeout(o,cb_done,data,hold_duration,fade_duration,from_a,to_a,...)
@@ -821,8 +781,16 @@ end)
 Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_manager)
 	
 	-- GENERAL ---------------------------------------------------------------------------
-	
+	MenuCallbackHandler.callback_odp_general_master_enabled = function(self,item)
+		local value = item:value() == "on"
+		ODamagePopups.settings.general_master_enabled = value
+		if not value then
+			ODamagePopups:ClearPopups()
+		end
+		ODamagePopups:SaveSettings()
+	end
 	MenuCallbackHandler.callback_odp_general_fun_allowed = function(self,item)
+		-- note: this is an index to a multiplechoice, not a toggle
 		local value = item:value()
 		ODamagePopups.settings.general_fun_allowed = value
 		ODamagePopups:SaveSettings()
@@ -934,7 +902,7 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		
 	
 	MenuCallbackHandler.callback_odp_appearance_popup_font_custom_enabled = function(self,item)
-		local value = item:value()
+		local value = item:value() == "on"
 		ODamagePopups.settings.appearance_popup_font_custom_enabled = value
 		ODamagePopups:SaveSettings()
 	end
@@ -976,7 +944,7 @@ end)
 
 function ODamagePopups:CreateColorpicker()
 	if ColorPicker and not self._colorpicker then
-		self._colorpicker = ColorPicker:new(
+		self._colorpicker = ColorPicker:new("offysdamagepopups"
 		--[[
 		{
 			color = Color.white,
@@ -1087,13 +1055,15 @@ end
 
 function ODamagePopups:ShowQKIMenu(id)
 	if _G.QuickKeyboardInput then
+		local is_pc_controller = managers.controller:get_default_wrapper_type() == "pc" or managers.controller:get_default_wrapper_type() == "steam" or managers.controller:get_default_wrapper_type() == "vr"
+		local yes_legend = is_pc_controller and managers.localization:btn_macro("continue") or managers.localization:get_default_macro("BTN_ACCEPT")
+		local no_legend = is_pc_controller and managers.localization:btn_macro("back") or managers.localization:get_default_macro("BTN_CANCEL")
 		_G.QuickKeyboardInput:new(
 			managers.localization:text("menu_odp_dialog_custom_font_title"),
-			managers.localization:text("menu_odp_dialog_custom_font_desc"),
-			{
-				default_value = self.settings.appearance_popup_font_name or "",
-				changed_callback = callback(self,self,"callback_qki_confirm",id)
-			},
+			managers.localization:text("menu_odp_dialog_custom_font_desc",{BTN_CONFIRM = utf8.to_upper(yes_legend),BTN_CANCEL = utf8.to_upper(no_legend)}),
+			self.settings.appearance_popup_font_name or "",
+			callback(self,self,"callback_qki_confirm",id),
+			127,
 			true
 		)
 	else

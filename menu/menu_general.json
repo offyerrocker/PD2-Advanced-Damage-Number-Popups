@@ -4,17 +4,17 @@
 	"title" : "menu_odp_options_general_title",
 	"items" : [
 		{
-			"type" : "multiple_choice",
-			"id" : "menu_odp_general_fun_allowed",
-			"title" : "menu_odp_general_fun_allowed_title",
-			"description" : "menu_odp_general_fun_allowed_desc",
-			"callback" : "callback_odp_general_fun_allowed",
-			"items" : [
-				"odp_fun_allowed_always",
-				"odp_fun_allowed_seasonal",
-				"odp_fun_allowed_never"
-			],
-			"value" : "general_fun_allowed"
+			"type" : "toggle",
+			"id" : "menu_odp_general_master_enabled",
+			"title" : "menu_odp_general_master_enabled_title",
+			"description" : "menu_odp_general_master_enabled_desc",
+			"callback" : "callback_odp_general_master_enabled",
+			"value" : "general_master_enabled"
+		},
+		{
+			"id" : "menu_odp_div_general_1",
+			"type" : "divider",
+			"size" : 8
 		},
 		{
 			"type" : "toggle",
@@ -53,6 +53,24 @@
 				"odp_damage_decimal_accuracy_three"
 			],
 			"value" : "general_damage_decimal_accuracy"
+		},
+		{
+			"id" : "menu_odp_div_general_2",
+			"type" : "divider",
+			"size" : 8
+		},
+		{
+			"type" : "multiple_choice",
+			"id" : "menu_odp_general_fun_allowed",
+			"title" : "menu_odp_general_fun_allowed_title",
+			"description" : "menu_odp_general_fun_allowed_desc",
+			"callback" : "callback_odp_general_fun_allowed",
+			"items" : [
+				"odp_fun_allowed_always",
+				"odp_fun_allowed_seasonal",
+				"odp_fun_allowed_never"
+			],
+			"value" : "general_fun_allowed"
 		}
 	]
 }
