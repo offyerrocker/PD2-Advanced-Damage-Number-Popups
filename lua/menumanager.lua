@@ -1,5 +1,11 @@
 --[[ 
 todo
+
+
+xml definition
+default position for dot damage (instead of unit pos)
+
+
 assure popup spreading in opposite directions for readability
 
 unbound panel size to prevent possible clipping with very large glyphs
@@ -753,7 +759,7 @@ end
 
 
 Hooks:Add("LocalizationManagerPostInit", "odp_LocalizationManagerPostInit", function(loc)
-	if true or not BeardLib then
+	if not BeardLib then
 		loc:load_localization_file(ODamagePopups._default_loc_path)
 	end
 end)

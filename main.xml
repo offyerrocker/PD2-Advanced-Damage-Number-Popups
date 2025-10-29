@@ -1,0 +1,6 @@
+<mod name="Advanced Damage Number Popups" author="Offyerrocker" color="Color(0.12,0.52,0.87)" >
+	<AssetUpdates id="54179" version="1.0.0" provider="modworkshop" install_directory = "mods/" version_is_number="false"/>
+	<Localization directory="l10n" default="english.json" >
+		<loc file="english.json" language="english" />
+	</Localization>
+</mod>

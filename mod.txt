@@ -1,12 +1,12 @@
 {
-	"name" : "Offy's Damage Popups",
-	"description" : "Show damage popups, with a variety of options.",
+	"name" : "Advanced Damage Number Popups",
+	"description" : "Show customizable damage popups, with a variety of options and styles.",
 	"author" : "Offyerrocker",
 	"contact" : "https://modworkshop.net/mod/54179",
 	"version" : "1.0.0",
 	"image" : "icon.png",
 	"blt_version" : 2,
-	"color" : "255 255 255",
+	"color" : "31 133 222",
 	"hooks" : [
 		{
 			"hook_id" : "lib/managers/menumanager",
