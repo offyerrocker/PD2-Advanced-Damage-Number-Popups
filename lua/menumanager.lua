@@ -1,8 +1,6 @@
 --[[ 
 todo
 
-
-xml definition
 default position for dot damage (instead of unit pos)
 
 
@@ -12,8 +10,6 @@ unbound panel size to prevent possible clipping with very large glyphs
 teammate popup settings
 
 speed var setting
-position offset setting (angle variance for spread)
-
 colorpicker: (suggested) default palettes
 
 warframe damage numbers?
@@ -35,7 +31,15 @@ ODamagePopups = {
 		group_damage_use_refresh = true, -- if true, refresh time window on hit; if false, only count seconds from first hit
 		appearance_use_damage_type_icon = false, -- deprecated because i think it's ugly
 		appearance_popup_style = 1, -- 1) spawn at hit position. 2) borderlands-style rain; 3) xiv style flytext; 4) destiny 2 style left/right splits
-		appearance_use_body_relative_position = false, -- if true, damage popups are always tethered/relative to the body position; if false, the damage popups may spawn at the hit position, but position does not follow the body position
+		appearance_use_body_relative_position = false, -- if true, damage popups are always tethered/relative to the body position; if false, the damage popups may spawn at a given unit/body, but position does not follow the body position
+		
+		appearance_popup_recenter_on_hit = false, -- if true, restart the popup attach anim (effectively recentering it and restarting its animation)
+		
+		appearance_popup_alpha = 1, -- opacity
+		appearance_popup_declutter_fade_alpha = 0.5, -- fade alpha of panel according to proximity to screen center; this value is reached at distance<=declutter_distance_min
+		appearance_popup_declutter_distance_max = 50, -- outer distance, where fadeout starts; no menu option
+		appearance_popup_declutter_distance_min = 20, -- inner distance, at theoretical max fadeout (min visibility); no menu option
+		appearance_popup_position_offset_distance = 32,
 		appearance_popup_hold_duration = 0.4,
 		appearance_popup_fade_duration = 0.25,
 		appearance_popup_font_custom_enabled = false,
@@ -176,6 +180,8 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 	local SETTING_FONTSIZE_PULSE_MULTIPLIER = self.settings.appearance_popup_fontsize_pulse_mul
 	local SETTING_FONT_NAME = self.settings.appearance_popup_font_custom_enabled and self.settings.appearance_popup_font_name or tweak_data.menu.pd2_large_font
 	local SETTING_FONT_SIZE = self.settings.appearance_popup_font_size or tweak_data.hud.medium_deafult_font_size
+	local SETTING_POPUP_ALPHA = self.settings.appearance_popup_alpha
+	local SETTING_POPUP_RECENTER_ON_HIT = self.settings.appearance_popup_recenter_on_hit
 	
 	if not alive(attacker_unit) then
 		return
@@ -217,6 +223,7 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 		local layer = 1
 		local font_size = 32
 		
+		local is_fresh_instance = nil
 		local popup_instance = nil
 		
 		do
@@ -326,9 +333,10 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 		end
 		
 		if popup_instance then
+			is_fresh_instance = false
 			popup_instance.text:set_text(damage_string)
 			
-			if popup_instance.anim_attach then
+			if SETTING_POPUP_RECENTER_ON_HIT and popup_instance.anim_attach then
 				popup_instance.panel:stop(popup_instance.anim_attach)
 				popup_instance.anim_attach = nil
 			end
@@ -336,7 +344,7 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 				popup_instance.panel:stop(popup_instance.anim_fadeout)
 				popup_instance.anim_fadeout = nil
 			end
-			popup_instance.panel:set_alpha(1)
+			popup_instance.panel:set_alpha(SETTING_POPUP_ALPHA)
 			
 			if SETTING_DAMAGE_TYPE_ICON and alive(popup_instance.icon) then
 				popup_instance.icon:set_image(icon_texture,unpack(icon_rect))
@@ -348,12 +356,14 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 				popup_instance.start_t = t
 			end
 		else
+			is_fresh_instance = true
 			local panel = parent_panel:panel({
 				name = "damage_popup_" .. tostring(damage_info),
 				w = 200,
 				h = 200,
 				x = -1000,
 				y = -1000,
+				alpha = SETTING_POPUP_ALPHA,
 				layer = 1
 			})
 			
@@ -408,27 +418,29 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 			
 			self._popup_instances[tbl_key] = popup_instance
 		
+	--		if alive(popup_instance.panel) then
+	--			local x,y,w,h = popup_instance.text:text_rect() -- this will crash if used on a gui Text object with an invalid font, so... don't do that. stop having it be invalid
+	--			popup_instance.panel:set_size(w + 4,h + 4)
+	--		end
 		end
 		
---		if alive(popup_instance.panel) then
---			local x,y,w,h = popup_instance.text:text_rect() -- this will crash if used on a gui Text object with an invalid font, so... don't do that. stop having it be invalid
---			popup_instance.panel:set_size(w + 4,h + 4)
---		end
-		
-		-- note: "done callbacks" on the attach functions will never run, since those animations are designed to run indefinitely and will not naturally self-terminate
-		if SETTING_POPUP_STYLE == 2 then
-			-- bl2
-			popup_instance.anim_attach = popup_instance.panel:animate(self.animate_attach_vault,nil,popup_instance,100)
-		elseif SETTING_POPUP_STYLE == 3 then
-			-- xiv
-			popup_instance.anim_attach = popup_instance.panel:animate(self.animate_attach_xiv,nil,popup_instance,100)	
-		elseif SETTING_POPUP_STYLE == 4 then
-			-- destiny
-			popup_instance.anim_attach = popup_instance.panel:animate(self.animate_attach_destiny,nil,popup_instance,100,0.9)
-		else -- alive(body) and SETTING_POPUP_STYLE == 1 then
-			-- attach to body part
-			popup_instance.anim_attach = popup_instance.panel:animate(self.animate_attach_body,nil,popup_instance)
+		if SETTING_POPUP_RECENTER_ON_HIT or is_fresh_instance then
+			-- note: "done callbacks" on the attach functions will never run, since those animations are designed to run indefinitely and will not naturally self-terminate
+			if SETTING_POPUP_STYLE == 2 then
+				-- bl2
+				popup_instance.anim_attach = popup_instance.panel:animate(self.animate_attach_vault,nil,popup_instance,100)
+			elseif SETTING_POPUP_STYLE == 3 then
+				-- xiv
+				popup_instance.anim_attach = popup_instance.panel:animate(self.animate_attach_xiv,nil,popup_instance,100)	
+			elseif SETTING_POPUP_STYLE == 4 then
+				-- destiny
+				popup_instance.anim_attach = popup_instance.panel:animate(self.animate_attach_destiny,nil,popup_instance,100,0.9)
+			else -- alive(body) and SETTING_POPUP_STYLE == 1 then
+				-- attach to body part
+				popup_instance.anim_attach = popup_instance.panel:animate(self.animate_attach_body,nil,popup_instance)
+			end
 		end
+		
 		
 		if headshot and alive(popup_instance.text) then
 			if popup_instance.anim_pulse then
@@ -529,6 +541,9 @@ function ODamagePopups.animate_attach_body(o,cb_done,data)
 	local pos_dir_vec = Vector3()
 	local viewport_cam = managers.viewport:get_current_camera()
 	local ws = data.workspace
+	local offset_distance = ODamagePopups.settings.appearance_popup_position_offset_distance
+	local t = TimerManager:game():time()
+	local offset_x,offset_y = math.cos(t * 360) * offset_distance,math.sin(t * 360) * offset_distance
 	while true do 
 		if alive(body) and ODamagePopups.settings.appearance_use_body_relative_position then
 			mvector3.set(world_pos,body:oobb():center())
@@ -539,7 +554,7 @@ function ODamagePopups.animate_attach_body(o,cb_done,data)
 		mvector3.normalize(pos_dir_vec)
 		if mvector3.dot(pos_dir_vec,cam_fwd_vec) < 0.5 then
 			screen_pos = ws:world_to_screen(viewport_cam,world_pos)
-			o:set_center(screen_pos.x,screen_pos.y)
+			o:set_center(screen_pos.x+offset_x,screen_pos.y+offset_y)
 		else
 			o:set_position(-1000,-1000)
 		end
@@ -559,7 +574,7 @@ function ODamagePopups.animate_attach_vault(o,cb_done,data,fly_speed)
 	local speed_mul = 360 / math.pi
 	local dir_y = -math.abs(math.sin(t * speed_mul)) * fly_speed
 	local dir_x = math.cos(t * speed_mul) * fly_speed
-	local offset_x,offset_y = 0,0
+	local offset_x,offset_y = 0,ODamagePopups.settings.appearance_popup_position_offset_distance
 	local body = data.body
 	local world_pos = data.position or Vector3()
 	local screen_pos = Vector3()
@@ -607,7 +622,7 @@ function ODamagePopups.animate_attach_xiv(o,cb_done,data,fly_speed)
 	local pos_dir_vec = Vector3()
 	local viewport_cam = managers.viewport:get_current_camera()
 	local ws = data.workspace
-	local y = 0
+	local y = -ODamagePopups.settings.appearance_popup_position_offset_distance
 	local dt = 0
 	while true do 
 		y = y - (fly_speed * dt)
@@ -647,7 +662,6 @@ function ODamagePopups.animate_attach_destiny(o,cb_done,data,fly_speed,decay)
 	local pos_dir_vec = Vector3()
 	local viewport_cam = managers.viewport:get_current_camera()
 	local ws = data.workspace
-	local x,y = 0,0
 	local x_speed = fly_speed
 	local y_speed
 	local dt = 0
@@ -662,6 +676,8 @@ function ODamagePopups.animate_attach_destiny(o,cb_done,data,fly_speed,decay)
 	else
 		x_sign = 1
 	end
+	local x,y = x_sign * ODamagePopups.settings.appearance_popup_position_offset_distance,0 -- * math.sign(1-math.random()) 
+	
 	-- it's okay if motion is perfectly horizontal, so sign() is acceptable here
 	local y_speed = math.cos(_r + math.random()) * fly_speed / 5
 	local y_sign = math.sign(y_speed)
@@ -728,6 +744,7 @@ function ODamagePopups.animate_text_size_grow(o,cb_done,data,from_size,to_size,d
 	end
 end
 
+-- calls parent(), so should not be used on ws root panel
 function ODamagePopups.animate_popup_fadeout(o,cb_done,data,hold_duration,fade_duration,from_a,to_a,...)
 	hold_duration = hold_duration or 1
 	fade_duration = fade_duration or 1
@@ -736,17 +753,56 @@ function ODamagePopups.animate_popup_fadeout(o,cb_done,data,hold_duration,fade_d
 	to_a = to_a or 0
 	
 	local d_a = from_a - to_a -- progressing from 1 -> 0, so d_a is inverted
+	local a_temp = 1
+	
+	local FADEOUT_ALPHA = ODamagePopups.settings.appearance_popup_declutter_fade_alpha
+	--local DELTA_FADEOUT_ALPHA = to_a - FADEOUT_ALPHA
+	
+	local px,py = o:parent():center()
+	local cx,cy = 0,0
+	local dx,dy = 0,0
+	local sq_current = 1
+	
+	local SQ_THRESHOLD_MAX = ODamagePopups.settings.appearance_popup_declutter_distance_max
+	local SQ_THRESHOLD_MIN = ODamagePopups.settings.appearance_popup_declutter_distance_min
+	local SQ_THRESHOLD_DELTA = SQ_THRESHOLD_MAX - SQ_THRESHOLD_MIN
+	-- fadeout begins when the popup's center is closer to the screen center than this value; at 0 distance from center, the popup is fully invisible
+	-- ideally this would have more settings/args for fine-tuning (inner/outer distance, min/max alpha, linear/quadratic falloff, alpha mul/floor behavior)
+	-- but i don't wanna. rapidly approaching menu fatigue for the user.
+	-- maybe later. this is Advanced Damage Number Popups anyway
+	
+	
 	local lerp = 0
 	
 	while hold_duration > 0 do 
 		local dt = coroutine.yield()
 		hold_duration = hold_duration - dt -- coroutine.yield() returns dt in this case
+		cx,cy = o:center()
+		dx,dy = cx-px, cy-py
+		
+		sq_current = math.sqrt(dx*dx + dy*dy) -- distance from center
+		if sq_current < SQ_THRESHOLD_MAX then
+			a_temp = FADEOUT_ALPHA * (1-(SQ_THRESHOLD_MAX - sq_current) / SQ_THRESHOLD_DELTA)
+		else
+			a_temp = 1
+		end
+		
+		o:set_alpha(a_temp * from_a)
 	end
 	
 	while fade_duration > 0 do 
 		lerp = fade_duration / max_fade_duration
+
+		cx,cy = o:center()
+		dx,dy = cx-px, cy-py
+		sq_current = math.sqrt(dx*dx + dy*dy)
+		if sq_current < SQ_THRESHOLD_MAX then
+			a_temp = FADEOUT_ALPHA * (1-(SQ_THRESHOLD_MAX - sq_current) / SQ_THRESHOLD_DELTA)
+		else
+			a_temp = 1
+		end
 		
-		o:set_alpha(to_a + lerp * lerp * d_a)
+		o:set_alpha(a_temp * (to_a + lerp * lerp * d_a))
 		
 		fade_duration = fade_duration - coroutine.yield()
 	end
@@ -846,6 +902,12 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		ODamagePopups:SaveSettings()
 	end
 	
+	MenuCallbackHandler.callback_odp_group_popup_recenter_on_hit = function(self,item)
+		local value = item:value() == "on"
+		ODamagePopups.settings.group_popup_recenter_on_hit = value
+		ODamagePopups:SaveSettings()
+	end
+	
 	
 	-- APPEARANCE ---------------------------------------------------------------------------
 	
@@ -895,6 +957,28 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 	end
 		-- appearance: customization
 	
+	
+	MenuCallbackHandler.callback_odp_appearance_popup_alpha = function(self,item)
+		local value = item:value()
+		ODamagePopups.settings.appearance_popup_alpha = value
+		ODamagePopups:SaveSettings()
+	end
+	
+	MenuCallbackHandler.callback_odp_appearance_popup_declutter_distance_min = function(self,item)
+		local value = item:value()
+		ODamagePopups.settings.appearance_popup_declutter_distance_min = value
+		ODamagePopups:SaveSettings()
+	end
+	MenuCallbackHandler.callback_odp_appearance_popup_declutter_distance_max = function(self,item)
+		local value = item:value()
+		ODamagePopups.settings.appearance_popup_declutter_distance_max = value
+		ODamagePopups:SaveSettings()
+	end
+	MenuCallbackHandler.callback_odp_appearance_popup_declutter_fade_alpha = function(self,item)
+		local value = item:value()
+		ODamagePopups.settings.appearance_popup_declutter_fade_alpha = value
+		ODamagePopups:SaveSettings()
+	end
 	
 	MenuCallbackHandler.callback_odp_appearance_popup_font_size = function(self,item)
 		local value = item:value()
