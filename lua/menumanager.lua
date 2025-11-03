@@ -1,6 +1,9 @@
 --[[ 
 todo
 
+fix for popups rendering in front of hud?
+	may need layer setting, or hud specific compatibility. yuck
+
 default position for dot damage (instead of unit pos)
 
 max number of popups
@@ -216,7 +219,7 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 		
 		local headshot = damage_info.headshot
 		local variant = damage_info.variant
-		local killshot = result.type == "death"
+		--local killshot = result.type == "death"
 		
 		local t = TimerManager:game():time()
 		local color_1 = Color.white
@@ -285,7 +288,7 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 		local color = self:GetColor(variant) or self:GetColor("misc")
 		
 		local icon_texture,icon_rect
-		if SETTING_DAMAGE_TYPE_ICON then
+		if SETTING_DAMAGE_TYPE_ICON then -- deprecated feature
 			if variant == "bullet" then
 				icon_texture,icon_rect = tweak_data.hud_icons:get_icon_data("wp_target")
 			elseif variant == "melee" then
@@ -1044,10 +1047,12 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		ODamagePopups:ShowColorpickerMenu("misc")
 	end
 	
+	
+	
 	ODamagePopups:LoadSettings()
 	MenuHelper:LoadFromJsonFile(ODamagePopups._menu_path .. "menu_general.json", ODamagePopups, ODamagePopups.settings)
 	MenuHelper:LoadFromJsonFile(ODamagePopups._menu_path .. "menu_appearance.json", ODamagePopups, ODamagePopups.settings)
-	MenuHelper:LoadFromJsonFile(ODamagePopups._menu_path .. "menu_grouping.json", ODamagePopups, ODamagePopups.settings)
+	MenuHelper:LoadFromJsonFile(ODamagePopups._menu_path .. "menu_advanced.json", ODamagePopups, ODamagePopups.settings)
 	--MenuHelper:LoadFromJsonFile(ODamagePopups._menu_path, ODamagePopups, ODamagePopups.settings)
 end)
 

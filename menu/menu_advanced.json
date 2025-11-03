@@ -1,0 +1,138 @@
+{
+	"menu_id" : "menu_odp_options_advanced",
+	"parent_menu_id" : "menu_odp_options_main",
+	"title" : "menu_odp_options_advanced_title",
+	"items" : [
+		{
+			"type" : "slider",
+			"id" : "menu_odp_appearance_popup_declutter_distance_max",
+			"title" : "menu_odp_appearance_popup_declutter_distance_max_title",
+			"description" : "menu_odp_appearance_popup_declutter_distance_max_desc",
+			"callback" : "callback_odp_appearance_popup_declutter_distance_max",
+			"value" : "appearance_popup_declutter_distance_max",
+			"default_value" : 0,
+			"min" : 0,
+			"max" : 250,
+			"step" : 5
+		},
+		{
+			"type" : "slider",
+			"id" : "menu_odp_appearance_popup_declutter_distance_min",
+			"title" : "menu_odp_appearance_popup_declutter_distance_min_title",
+			"description" : "menu_odp_appearance_popup_declutter_distance_min_desc",
+			"callback" : "callback_odp_appearance_popup_declutter_distance_min",
+			"value" : "appearance_popup_declutter_distance_min",
+			"default_value" : 0,
+			"min" : 0,
+			"max" : 250,
+			"step" : 5
+		},
+		{
+			"type" : "slider",
+			"id" : "menu_odp_appearance_popup_declutter_fade_alpha",
+			"title" : "menu_odp_appearance_popup_declutter_fade_alpha_title",
+			"description" : "menu_odp_appearance_popup_declutter_fade_alpha_desc",
+			"callback" : "callback_odp_appearance_popup_declutter_fade_alpha",
+			"value" : "appearance_popup_declutter_fade_alpha",
+			"default_value" : 0.5,
+			"min" : 0,
+			"max" : 1,
+			"step" : 0.1
+		},
+		{
+			"type" : "slider",
+			"id" : "menu_odp_appearance_popup_hold_duration",
+			"title" : "menu_odp_appearance_popup_hold_duration_title",
+			"description" : "menu_odp_appearance_popup_hold_duration_desc",
+			"callback" : "callback_odp_appearance_popup_hold_duration",
+			"value" : "appearance_popup_hold_duration",
+			"default_value" : 0.66,
+			"min" : 0,
+			"max" : 3,
+			"step" : 0.1
+		},
+		{
+			"type" : "slider",
+			"id" : "menu_odp_appearance_popup_fade_duration",
+			"title" : "menu_odp_appearance_popup_fade_duration_title",
+			"description" : "menu_odp_appearance_popup_fade_duration_desc",
+			"callback" : "callback_odp_appearance_popup_fade_duration",
+			"value" : "appearance_popup_fade_duration",
+			"default_value" : 0.66,
+			"min" : 0,
+			"max" : 3,
+			"step" : 0.1
+		},
+		{
+			"id" : "menu_odp_div_advanced_1",
+			"type" : "divider",
+			"size" : 8
+		},
+		{
+			"type" : "multiple_choice",
+			"id" : "menu_odp_group_damage_aggregate_mode",
+			"title" : "menu_odp_group_damage_aggregate_mode_title",
+			"description" : "menu_odp_group_damage_aggregate_mode_desc",
+			"callback" : "callback_odp_group_damage_aggregate_mode",
+			"items" : [
+				"odp_group_damage_aggregate_mode_none",
+				"odp_group_damage_aggregate_mode_unit",
+				"odp_group_damage_aggregate_mode_bodyunit"
+			],
+			"value" : "group_damage_aggregate_mode"
+		},
+		{
+			"type" : "slider",
+			"id" : "menu_odp_group_damage_time_window",
+			"title" : "menu_odp_group_damage_time_window_title",
+			"description" : "menu_odp_group_damage_time_window_desc",
+			"callback" : "callback_odp_group_damage_time_window",
+			"value" : "group_damage_time_window",
+			"default_value" : 1,
+			"show_value" : "true",
+			"min" : 0,
+			"max" : 5,
+			"step" : 0.5
+		},
+		{
+			"type" : "toggle",
+			"id" : "menu_odp_group_damage_use_refresh",
+			"title" : "menu_odp_group_damage_use_refresh_title",
+			"description" : "menu_odp_group_damage_use_refresh_desc",
+			"callback" : "callback_odp_group_damage_use_refresh",
+			"value" : "group_damage_use_refresh"
+		},
+		{
+			"id" : "menu_odp_div_advanced_2",
+			"type" : "divider",
+			"size" : 8
+		},
+		{
+			"type" : "toggle",
+			"id" : "menu_odp_appearance_popup_font_custom_enabled",
+			"title" : "menu_odp_appearance_popup_font_custom_enabled_title",
+			"description" : "menu_odp_appearance_popup_font_custom_enabled_desc",
+			"callback" : "callback_odp_appearance_popup_font_custom_enabled",
+			"value" : "appearance_popup_font_custom_enabled"
+		},
+		{
+			"type" : "button",
+			"id" : "menu_odp_quickkeyboardinput_custom_font_name",
+			"title" : "menu_odp_quickkeyboardinput_custom_font_name_title",
+			"description" : "menu_odp_quickkeyboardinput_custom_font_name_desc",
+			"callback" : "callback_odp_quickkeyboardinput_custom_font_name"
+		},
+		{
+			"type" : "slider",
+			"id" : "menu_odp_appearance_popup_font_size",
+			"title" : "menu_odp_appearance_popup_font_size_title",
+			"description" : "menu_odp_appearance_popup_font_size_desc",
+			"callback" : "callback_odp_appearance_popup_font_size",
+			"value" : "appearance_popup_font_size",
+			"default_value" : 28,
+			"min" : 1,
+			"max" : 64,
+			"step" : 8
+		}
+	]
+}
