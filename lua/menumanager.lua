@@ -42,7 +42,7 @@ ODamagePopups = {
 		appearance_popup_alpha = 1, -- opacity
 		appearance_popup_declutter_fade_alpha = 0.5, -- fade alpha of panel according to proximity to screen center; this value is reached at distance<=declutter_distance_min
 		appearance_popup_declutter_distance_max = 50, -- outer distance, where fadeout starts
-		appearance_popup_declutter_distance_min = 20, -- inner distance, at theoretical max fadeout (min visibility)
+		appearance_popup_declutter_distance_min = 30, -- inner distance, at theoretical max fadeout (min visibility)
 		appearance_popup_position_offset_distance = 32,
 		appearance_popup_hold_duration = 0.4,
 		appearance_popup_fade_duration = 0.25,
@@ -104,6 +104,8 @@ ODamagePopups = {
 	_parent_panel = nil, -- Panel
 	_menu_preview_panel = nil,
 	_menu_preview_popup = nil,
+	_menu_preview_respawn_popup_t = nil,
+	_menu_preview_variant = nil,
 	_fun_allowed = nil -- bool, determined on game load
 }
 
@@ -228,7 +230,7 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 		
 		local headshot = damage_info.headshot
 		local variant = damage_info.variant
-		--local killshot = result.type == "death"
+		local killshot = result.type == "death"
 		
 		local t = TimerManager:game():time()
 		local color_1 = Color.white
@@ -270,6 +272,7 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 				
 				if popup_instance then
 					damage = damage + (popup_instance.damage or 0)
+					killshot = popup_instance.dead
 				else
 					-- if not reusing the previous instance,
 					-- remove the old instance and use the same ukey for the new instance;
@@ -344,6 +347,10 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 			end
 		end
 		
+		if killshot then
+			damage_string = "" .. damage_string -- prepend skull icon (may not work with custom fonts)
+		end
+		
 		if popup_instance then
 			is_fresh_instance = false
 			popup_instance.text:set_text(damage_string)
@@ -412,6 +419,7 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 			})
 			
 			popup_instance = {
+				dead = killshot,
 				damage = damage,
 				body = body,
 				position = hit_position,
@@ -1011,7 +1019,9 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		ODamagePopups.settings.appearance_popup_fontsize_pulse_mul = value
 		ODamagePopups:SaveSettings()
 		
-		ODamagePopups:CreatePreview()
+		ODamagePopups:CreatePreview({
+			headshot = true
+		})
 	end
 	
 	MenuCallbackHandler.callback_odp_appearance_popup_fontsize_pulse_duration = function(self,item)
@@ -1019,7 +1029,9 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		ODamagePopups.settings.appearance_popup_fontsize_pulse_duration = value
 		ODamagePopups:SaveSettings()
 		
-		ODamagePopups:CreatePreview()
+		ODamagePopups:CreatePreview({
+			headshot = true
+		})
 	end
 		-- appearance: customization
 	
@@ -1197,7 +1209,8 @@ function ODamagePopups:CreatePreview(damage_info)
 	local hit_position = viewport_cam:position() + (fwd * PREVIEW_DISTANCE) -- preview is 15m away
 	
 	local headshot = damage_info.headshot or false
-	local variant = damage_info.variant or "bullet"
+	local variant = damage_info.variant or self._menu_preview_variant or "bullet"
+	local killshot = damage_info.killshot or (damage_info.result and damage_info.result.type == "death")
 	
 	local t = Application:time()
 	self._menu_preview_panel:panel({
@@ -1233,6 +1246,7 @@ function ODamagePopups:CreatePreview(damage_info)
 			
 			if popup_instance then
 				damage = damage + (popup_instance.damage or 0)
+				killshot = popup_instance.dead
 			else
 				-- if not reusing the previous instance,
 				-- remove the old instance
@@ -1247,11 +1261,13 @@ function ODamagePopups:CreatePreview(damage_info)
 		if alive(parent_panel) then
 			parent_panel:remove(o)
 		end
-		if self._menu_preview_popup == data then
+		local _t = Application:time()
+		if self._menu_preview_popup == data or (not self._menu_preview_respawn_popup_t or (self._menu_preview_respawn_popup_t < _t)) then
 			-- make one popup on expiry
 			-- (don't clone each one)
 			self:CreatePreview()
 			self._menu_preview_popup = nil
+			self._menu_preview_respawn_popup_t = _t + 1
 		end
 	end
 	
@@ -1304,6 +1320,10 @@ function ODamagePopups:CreatePreview(damage_info)
 				damage_string = string.format("%d",damage)
 			end
 		end
+	end
+	
+	if killshot then
+		damage_string = "" .. damage_string -- prepend skull icon (may not work with custom fonts)
 	end
 	
 	if popup_instance then
@@ -1434,17 +1454,16 @@ function ODamagePopups:StopPreview()
 	end
 	self._menu_preview_panel = nil
 	self._menu_preview_popup = nil
+	self._menu_preview_variant = nil
+	self._menu_preview_respawn_popup_t = nil
 end
 
 
 function ODamagePopups:CreateColorpicker()
 	if ColorPicker and not self._colorpicker then
-		self._colorpicker = ColorPicker:new("offysdamagepopups",
-		{
-			changed_callback=callback(self,self,"callback_colorpicker_changed")
-		}
+		self._colorpicker = ColorPicker:new("offysdamagepopups"
 		--[[
-		{
+		,{
 			color = Color.white,
 			palettes = {},
 			done_callback = nil,
@@ -1468,7 +1487,9 @@ function ODamagePopups:ShowColorpickerMenu(id)
 			color = color,
 			palettes = self:GetPaletteColors(),
 			done_callback = callback(self,self,"callback_colorpicker_confirm",id),
-			changed_callback = nil,
+			changed_callback=function(color)
+				self:callback_colorpicker_changed(color,id)
+			end,
 			blur_bg_alpha = 0
 		})
 	end
@@ -1520,10 +1541,11 @@ function ODamagePopups:callback_qki_confirm(id,text)
 	self:CheckFontLoaded()
 end
 
-function ODamagePopups:callback_colorpicker_changed(color)
+function ODamagePopups:callback_colorpicker_changed(color,id)
 	self:CreatePreview({
 		color = color
 	})
+	self._menu_preview_variant = id
 end
 
 function ODamagePopups:callback_colorpicker_confirm(id,color,palettes,success)

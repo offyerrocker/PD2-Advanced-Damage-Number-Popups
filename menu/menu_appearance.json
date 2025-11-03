@@ -42,6 +42,30 @@
 		},
 		{
 			"type" : "slider",
+			"id" : "menu_odp_appearance_popup_hold_duration",
+			"title" : "menu_odp_appearance_popup_hold_duration_title",
+			"description" : "menu_odp_appearance_popup_hold_duration_desc",
+			"callback" : "callback_odp_appearance_popup_hold_duration",
+			"value" : "appearance_popup_hold_duration",
+			"default_value" : 0.66,
+			"min" : 0.01,
+			"max" : 3,
+			"step" : 0.1
+		},
+		{
+			"type" : "slider",
+			"id" : "menu_odp_appearance_popup_fade_duration",
+			"title" : "menu_odp_appearance_popup_fade_duration_title",
+			"description" : "menu_odp_appearance_popup_fade_duration_desc",
+			"callback" : "callback_odp_appearance_popup_fade_duration",
+			"value" : "appearance_popup_fade_duration",
+			"default_value" : 0.66,
+			"min" : 0.01,
+			"max" : 3,
+			"step" : 0.1
+		},
+		{
+			"type" : "slider",
 			"id" : "menu_odp_appearance_popup_alpha",
 			"title" : "menu_odp_appearance_popup_alpha_title",
 			"description" : "menu_odp_appearance_popup_alpha_desc",
