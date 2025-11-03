@@ -2,6 +2,8 @@
 	"menu_id" : "menu_odp_options_general",
 	"parent_menu_id" : "menu_odp_options_main",
 	"title" : "menu_odp_options_general_title",
+	"focus_changed_callback" : "callback_odp_menu_main_focus",
+	"back_callback" : "callback_odp_menu_main_back",
 	"items" : [
 		{
 			"type" : "toggle",

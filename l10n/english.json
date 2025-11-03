@@ -40,7 +40,7 @@
 	"menu_odp_appearance_popup_declutter_fade_alpha_title" : "Declutter: Alpha",
 	"menu_odp_appearance_popup_declutter_fade_alpha_desc" : "Opacity approaches this value the closer the popup gets to the screen center.",
 	"menu_odp_appearance_popup_declutter_distance_min_title" : "Declutter Fading Proximity (Inner)",
-	"menu_odp_appearance_popup_declutter_distance_min_desc" : "Inner distance for declutter fading. Approaching this distance to screen center, popups will be fully faded out to Alpha value.",
+	"menu_odp_appearance_popup_declutter_distance_min_desc" : "Inner distance for declutter fading. Approaching this distance to screen center, popups will be fully faded out to Alpha value. This should be smaller than Outer value.",
 	"menu_odp_appearance_popup_declutter_distance_max_title" : "Declutter Fading Proximity (Outer)",
 	"menu_odp_appearance_popup_declutter_distance_max_desc" : "Outer distance for declutter fading. Approaching this distance to screen center, popups will start to fade out towards Alpha value. Set to 0 to disable declutter fading.",
 	"menu_odp_appearance_popup_fontsize_pulse_mul_title" : "Headshot Animation Size",

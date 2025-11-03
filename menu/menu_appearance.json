@@ -2,6 +2,8 @@
 	"menu_id" : "menu_odp_options_appearance",
 	"parent_menu_id" : "menu_odp_options_main",
 	"title" : "menu_odp_options_appearance_title",
+	"focus_changed_callback" : "callback_odp_menu_main_focus",
+	"back_callback" : "callback_odp_menu_main_back",
 	"items" : [
 		{
 			"DISABLED_type" : "toggle",
@@ -37,14 +39,6 @@
 			"id" : "menu_odp_div_appearance_1",
 			"type" : "divider",
 			"size" : 8
-		},
-		{
-			"type" : "toggle",
-			"id" : "menu_odp_group_popup_recenter_on_hit",
-			"title" : "menu_odp_group_popup_recenter_on_hit_title",
-			"description" : "menu_odp_group_popup_recenter_on_hit_desc",
-			"callback" : "callback_odp_group_popup_recenter_on_hit",
-			"value" : "group_popup_recenter_on_hit"
 		},
 		{
 			"type" : "slider",

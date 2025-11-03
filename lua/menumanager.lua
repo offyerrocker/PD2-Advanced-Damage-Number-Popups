@@ -102,6 +102,8 @@ ODamagePopups = {
 	_popup_instances = {}, -- table, keyed by [string unitkey]
 	_workspace = nil, -- Workspace
 	_parent_panel = nil, -- Panel
+	_menu_preview_panel = nil,
+	_menu_preview_popup = nil,
 	_fun_allowed = nil -- bool, determined on game load
 }
 
@@ -117,6 +119,7 @@ function ODamagePopups:GetColor(id)
 	return id and self._colors[id]
 end
 
+Hooks:Register("ODamagePopups_OnCustomFontSettingChanged")
 function ODamagePopups:LoadSettings()
 	local file = io.open(self._save_path, "r")
 	if file then
@@ -125,7 +128,14 @@ function ODamagePopups:LoadSettings()
 		end
 	end
 	
+	self:CheckFontLoaded()
 	self:UnpackColors()
+end
+
+function ODamagePopups:CheckFontLoaded()
+	if self.settings.appearance_popup_font_custom_enabled then
+		Hooks:Call("ODamagePopups_OnCustomFontSettingChanged",self.settings.appearance_popup_font_name)
+	end
 end
 
 function ODamagePopups:SaveSettings()
@@ -168,7 +178,6 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 	local attacker_unit = damage_info.attacker_unit
 	local SETTING_DAMAGE_TYPE_ICON = self.settings.appearance_use_damage_type_icon
 	local SETTING_RAW_DAMAGE = self.settings.general_use_raw_damage
-	--local SETTING_DAMAGE_STACKING = self.settings.use_stack_damage
 	local SETTING_DAMAGE_STACKING = self.settings.group_damage_aggregate_mode
 	local SETTING_PLAYER_ONLY = self.settings.general_use_player_damage_only
 	local SETTING_POPUP_STYLE = self.settings.appearance_popup_style
@@ -185,7 +194,7 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 	local SETTING_FONT_NAME = self.settings.appearance_popup_font_custom_enabled and self.settings.appearance_popup_font_name or tweak_data.menu.pd2_large_font
 	local SETTING_FONT_SIZE = self.settings.appearance_popup_font_size or tweak_data.hud.medium_deafult_font_size
 	local SETTING_POPUP_ALPHA = self.settings.appearance_popup_alpha
-	local SETTING_POPUP_RECENTER_ON_HIT = self.settings.appearance_popup_recenter_on_hit
+	local SETTING_POPUP_RECENTER_ON_HIT = self.settings.group_popup_recenter_on_hit
 	
 	if not alive(attacker_unit) then
 		return
@@ -225,7 +234,6 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 		local color_1 = Color.white
 		local color_2 = Color.black
 		local layer = 1
-		local font_size = 32
 		
 		local is_fresh_instance = nil
 		local popup_instance = nil
@@ -855,8 +863,8 @@ Hooks:Add("MenuManagerBuildCustomMenus", "odp_MenuManagerBuildCustomMenus", func
 	nodes[ODamagePopups._menu_main_id] = MenuHelper:BuildMenu(
 		ODamagePopups._menu_main_id,{
 			area_bg = "none",
-			back_callback = nil,
-			focus_changed_callback = nil
+			back_callback = "callback_odp_menu_main_back",
+			focus_changed_callback = "callback_odp_menu_main_focus"
 		}
 	)
 	MenuHelper:AddMenuItem(nodes.blt_options,ODamagePopups._menu_main_id,"menu_odp_options_main_title","menu_odp_options_main_desc")
@@ -868,21 +876,29 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 	MenuCallbackHandler.callback_odp_general_master_enabled = function(self,item)
 		local value = item:value() == "on"
 		ODamagePopups.settings.general_master_enabled = value
+		ODamagePopups:SaveSettings()
+		
 		if not value then
 			ODamagePopups:ClearPopups()
+			ODamagePopups:StopPreview()
+		else
+			ODamagePopups:StartPreview()
 		end
-		ODamagePopups:SaveSettings()
 	end
 	MenuCallbackHandler.callback_odp_general_fun_allowed = function(self,item)
 		-- note: this is an index to a multiplechoice, not a toggle
 		local value = item:value()
 		ODamagePopups.settings.general_fun_allowed = value
 		ODamagePopups:SaveSettings()
+		
+		ODamagePopups:CreatePreview()
 	end
 	MenuCallbackHandler.callback_odp_general_use_raw_damage = function(self,item)
 		local value = item:value() == "on"
 		ODamagePopups.settings.general_use_raw_damage = value
 		ODamagePopups:SaveSettings()
+		
+		ODamagePopups:CreatePreview()
 	end
 	
 	
@@ -890,17 +906,23 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		local value = item:value() == "on"
 		ODamagePopups.settings.general_use_player_damage_only = value
 		ODamagePopups:SaveSettings()
+		
+		ODamagePopups:CreatePreview()
 	end
 	MenuCallbackHandler.callback_odp_general_hide_zero_damage_hits = function(self,item)
 		local value = item:value() == "on"
 		ODamagePopups.settings.general_hide_zero_damage_hits = value
 		ODamagePopups:SaveSettings()
+		
+		ODamagePopups:CreatePreview()
 	end
 	
 	MenuCallbackHandler.callback_odp_general_damage_decimal_accuracy = function(self,item)
 		local value = item:value()
 		ODamagePopups.settings.general_damage_decimal_accuracy = value
 		ODamagePopups:SaveSettings()
+		
+		ODamagePopups:CreatePreview()
 	end
 	
 	
@@ -910,24 +932,32 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		local value = item:value()
 		ODamagePopups.settings.group_damage_aggregate_mode = value
 		ODamagePopups:SaveSettings()
+		
+		ODamagePopups:CreatePreview()
 	end
 	
 	MenuCallbackHandler.callback_odp_group_damage_time_window = function(self,item)
 		local value = item:value()
 		ODamagePopups.settings.group_damage_time_window = value
 		ODamagePopups:SaveSettings()
+		
+		ODamagePopups:CreatePreview()
 	end
 	
 	MenuCallbackHandler.callback_odp_group_damage_use_refresh = function(self,item)
 		local value = item:value() == "on"
 		ODamagePopups.settings.group_damage_use_refresh = value
 		ODamagePopups:SaveSettings()
+		
+		ODamagePopups:CreatePreview()
 	end
 	
 	MenuCallbackHandler.callback_odp_group_popup_recenter_on_hit = function(self,item)
 		local value = item:value() == "on"
 		ODamagePopups.settings.group_popup_recenter_on_hit = value
 		ODamagePopups:SaveSettings()
+		
+		ODamagePopups:CreatePreview()
 	end
 	
 	
@@ -937,18 +967,24 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		local value = item:value() == "on"
 		ODamagePopups.settings.appearance_use_damage_type_icon = value
 		ODamagePopups:SaveSettings()
+		
+		ODamagePopups:CreatePreview()
 	end
 	
 	MenuCallbackHandler.callback_odp_appearance_popup_style = function(self,item)
 		local value = item:value()
 		ODamagePopups.settings.appearance_popup_style = value
 		ODamagePopups:SaveSettings()
+		
+		ODamagePopups:CreatePreview()
 	end
 	
 	MenuCallbackHandler.callback_odp_appearance_use_body_relative_position = function(self,item)
 		local value = item:value() == "on"
 		ODamagePopups.settings.appearance_use_body_relative_position = value
 		ODamagePopups:SaveSettings()
+		
+		ODamagePopups:CreatePreview()
 	end
 	
 	
@@ -956,12 +992,16 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		local value = item:value()
 		ODamagePopups.settings.appearance_popup_hold_duration = value
 		ODamagePopups:SaveSettings()
+		
+		ODamagePopups:CreatePreview()
 	end
 	
 	MenuCallbackHandler.callback_odp_appearance_popup_fade_duration = function(self,item)
 		local value = item:value()
 		ODamagePopups.settings.appearance_popup_fade_duration = value
 		ODamagePopups:SaveSettings()
+		
+		ODamagePopups:CreatePreview()
 	end
 	
 	
@@ -970,12 +1010,16 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		local value = item:value()
 		ODamagePopups.settings.appearance_popup_fontsize_pulse_mul = value
 		ODamagePopups:SaveSettings()
+		
+		ODamagePopups:CreatePreview()
 	end
 	
 	MenuCallbackHandler.callback_odp_appearance_popup_fontsize_pulse_duration = function(self,item)
 		local value = item:value()
 		ODamagePopups.settings.appearance_popup_fontsize_pulse_duration = value
 		ODamagePopups:SaveSettings()
+		
+		ODamagePopups:CreatePreview()
 	end
 		-- appearance: customization
 	
@@ -984,28 +1028,38 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		local value = item:value()
 		ODamagePopups.settings.appearance_popup_alpha = value
 		ODamagePopups:SaveSettings()
+		
+		ODamagePopups:CreatePreview()
 	end
 	
 	MenuCallbackHandler.callback_odp_appearance_popup_declutter_distance_min = function(self,item)
 		local value = item:value()
 		ODamagePopups.settings.appearance_popup_declutter_distance_min = value
 		ODamagePopups:SaveSettings()
+		
+		ODamagePopups:CreatePreview()
 	end
 	MenuCallbackHandler.callback_odp_appearance_popup_declutter_distance_max = function(self,item)
 		local value = item:value()
 		ODamagePopups.settings.appearance_popup_declutter_distance_max = value
 		ODamagePopups:SaveSettings()
+		
+		ODamagePopups:CreatePreview()
 	end
 	MenuCallbackHandler.callback_odp_appearance_popup_declutter_fade_alpha = function(self,item)
 		local value = item:value()
 		ODamagePopups.settings.appearance_popup_declutter_fade_alpha = value
 		ODamagePopups:SaveSettings()
+		
+		ODamagePopups:CreatePreview()
 	end
 	
 	MenuCallbackHandler.callback_odp_appearance_popup_font_size = function(self,item)
 		local value = item:value()
 		ODamagePopups.settings.appearance_popup_font_size = value
 		ODamagePopups:SaveSettings()
+		
+		ODamagePopups:CreatePreview()
 	end
 	
 	MenuCallbackHandler.callback_odp_quickkeyboardinput_custom_font_name = function(self,item)
@@ -1017,6 +1071,8 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		local value = item:value() == "on"
 		ODamagePopups.settings.appearance_popup_font_custom_enabled = value
 		ODamagePopups:SaveSettings()
+		ODamagePopups:CheckFontLoaded()
+		ODamagePopups:CreatePreview()
 	end
 	
 	MenuCallbackHandler.callback_odp_colorpicker_customize_bullet = function(self,item)
@@ -1045,20 +1101,348 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 	
 	MenuCallbackHandler.callback_odp_colorpicker_customize_misc = function(self,item)
 		ODamagePopups:ShowColorpickerMenu("misc")
+	end	
+	
+	-- these don't work currently; BLT issue with menu helper?
+	MenuCallbackHandler.callback_odp_menu_main_focus = function(self,focus)
+		if focus then
+			-- create preview
+			ODamagePopups:StartPreview()
+		end
 	end
 	
-	
+	MenuCallbackHandler.callback_odp_menu_main_back = function(self)
+		-- remove preview
+		ODamagePopups:StopPreview()
+	end
 	
 	ODamagePopups:LoadSettings()
+	
 	MenuHelper:LoadFromJsonFile(ODamagePopups._menu_path .. "menu_general.json", ODamagePopups, ODamagePopups.settings)
 	MenuHelper:LoadFromJsonFile(ODamagePopups._menu_path .. "menu_appearance.json", ODamagePopups, ODamagePopups.settings)
 	MenuHelper:LoadFromJsonFile(ODamagePopups._menu_path .. "menu_advanced.json", ODamagePopups, ODamagePopups.settings)
 	--MenuHelper:LoadFromJsonFile(ODamagePopups._menu_path, ODamagePopups, ODamagePopups.settings)
 end)
 
+function ODamagePopups:StartPreview()
+	if not alive(self._menu_preview_panel) then
+		local fullscreen_ws = managers.menu_component and managers.menu_component._fullscreen_ws
+		if alive(fullscreen_ws) then 
+			self._menu_preview_panel = fullscreen_ws:panel():panel({
+				name = "odp_preview_panel"
+			})
+			local rect = self._menu_preview_panel:rect({
+				name = "bg_rect",
+				color = Color(0.33,0.33,0.33),
+				w = 500,
+				h = 500,
+				alpha = 1
+			})
+			local w,h = self._menu_preview_panel:size()
+			rect:set_center(w/2,h/2)
+		end
+	end
+	
+	self:CreatePreview()
+end
+
+-- create a preview popup instance
+function ODamagePopups:CreatePreview(damage_info)
+	if not alive(self._menu_preview_panel) then
+		return 
+	end
+	
+	if not self.settings.general_master_enabled then 
+		return
+	end
+	
+	if not damage_info or type(damage_info) ~= "table" then
+		damage_info = {}
+	end
+	
+	local SETTING_DAMAGE_TYPE_ICON = self.settings.appearance_use_damage_type_icon
+	local SETTING_RAW_DAMAGE = self.settings.general_use_raw_damage
+	local SETTING_DAMAGE_STACKING = self.settings.group_damage_aggregate_mode
+	local SETTING_PLAYER_ONLY = self.settings.general_use_player_damage_only
+	local SETTING_POPUP_STYLE = self.settings.appearance_popup_style
+	local POPUP_HOLD_DURATION = self.settings.appearance_popup_hold_duration
+	local POPUP_FADE_DURATION = self.settings.appearance_popup_fade_duration
+	local SETTING_POPUP_STICKY = self.settings.appearance_use_body_relative_position
+	local SETTING_HIDE_ZERO_DAMAGE_HITS = self.settings.general_hide_zero_damage_hits
+	local DECIMAL_ACCURACY = self.settings.general_damage_decimal_accuracy -- should be an int
+	local SETTING_DAMAGE_STACKING_TIME_GROUP_THRESHOLD = self.settings.group_damage_time_window 
+	local SETTING_DAMAGE_STACKING_TIME_REFRESH_ENABLED = self.settings.group_damage_use_refresh
+	
+	local SETTING_FONTSIZE_PULSE_DURATION = self.settings.appearance_popup_fontsize_pulse_duration
+	local SETTING_FONTSIZE_PULSE_MULTIPLIER = self.settings.appearance_popup_fontsize_pulse_mul
+	local SETTING_FONT_NAME = self.settings.appearance_popup_font_custom_enabled and self.settings.appearance_popup_font_name or tweak_data.menu.pd2_large_font
+	local SETTING_FONT_SIZE = self.settings.appearance_popup_font_size or tweak_data.hud.medium_deafult_font_size
+	local SETTING_POPUP_ALPHA = self.settings.appearance_popup_alpha
+	local SETTING_POPUP_RECENTER_ON_HIT = self.settings.group_popup_recenter_on_hit
+
+	local damage = SETTING_RAW_DAMAGE and damage_info.raw_damage or damage_info.damage or math.random(1,100)
+	
+	if SETTING_HIDE_ZERO_DAMAGE_HITS and damage == 0 then
+		return
+	end
+	
+	damage = damage * 10 -- displayed health/damage numbers are 10x their internal values. why? good question
+	
+	local name = tostring(damage_info)
+	
+	local viewport_cam = managers.viewport:get_current_camera()
+	local fwd = viewport_cam:rotation():y()
+	
+	local PREVIEW_DISTANCE = 1500
+	local hit_position = viewport_cam:position() + (fwd * PREVIEW_DISTANCE) -- preview is 15m away
+	
+	local headshot = damage_info.headshot or false
+	local variant = damage_info.variant or "bullet"
+	
+	local t = Application:time()
+	self._menu_preview_panel:panel({
+		name = "preview_" .. name
+	})
+	
+	local color_1 = Color.white
+	local color_2 = Color.black
+	local layer = 1
+	local font_size = 32
+	
+	local is_fresh_instance = nil
+	local popup_instance = nil
+	
+	do
+		local prev_instance = self._menu_preview_popup
+		if prev_instance then
+			local timecheck_success = true
+			-- check if damage is within the damage group's time threshold
+			if SETTING_DAMAGE_STACKING_TIME_GROUP_THRESHOLD and SETTING_DAMAGE_STACKING_TIME_GROUP_THRESHOLD ~= 0 then
+				local damage_group_t = prev_instance.start_t or 0
+				if t - damage_group_t <= SETTING_DAMAGE_STACKING_TIME_GROUP_THRESHOLD then
+					-- is within this damage group
+				else
+					-- timed out, don't accept new damage (make a new instance)
+					timecheck_success = false
+				end
+			end
+			
+			if timecheck_success and SETTING_DAMAGE_STACKING ~= 1 then
+				popup_instance = prev_instance
+			end
+			
+			if popup_instance then
+				damage = damage + (popup_instance.damage or 0)
+			else
+				-- if not reusing the previous instance,
+				-- remove the old instance
+				self._menu_preview_popup = nil
+			end
+		end
+	end
+	
+	local parent_panel = self._menu_preview_panel
+	local function cb_done(o,data)
+		-- remove panel and unregister popup
+		if alive(parent_panel) then
+			parent_panel:remove(o)
+		end
+		if self._menu_preview_popup == data then
+			-- make one popup on expiry
+			-- (don't clone each one)
+			self:CreatePreview()
+			self._menu_preview_popup = nil
+		end
+	end
+	
+	local color = damage_info.color or self:GetColor(variant) or self:GetColor("misc")
+	
+	local icon_texture,icon_rect
+	if SETTING_DAMAGE_TYPE_ICON then -- deprecated feature
+		if variant == "bullet" then
+			icon_texture,icon_rect = tweak_data.hud_icons:get_icon_data("wp_target")
+		elseif variant == "melee" then
+			icon_texture,icon_rect = tweak_data.hud_icons:get_icon_data("pd2_melee")
+		elseif variant == "poison" then
+			icon_texture,icon_rect = tweak_data.hud_icons:get_icon_data("pd2_methlab")
+		elseif variant == "fire" then
+			icon_texture,icon_rect = tweak_data.hud_icons:get_icon_data("pd2_fire")
+		elseif variant == "explosion" then
+			icon_texture,icon_rect = tweak_data.hud_icons:get_icon_data("pd2_c4")
+		else
+			icon_texture,icon_rect = tweak_data.hud_icons:get_icon_data("pd2_kill")
+		end
+	end
+	
+	local damage_string
+	if self._fun_allowed then
+		if math.floor(damage) == 69 then
+			damage_string = "69 (nice)" --not localized!
+		else
+			damage_string = self.to_roman_numerals_str(damage)
+		end
+		-- alt. exp
+--			damage_string = string.format("%e",damage)
+		
+		-- alt. hex
+--			if DECIMAL_ACCURACY > 1 then
+--				damage_string = string.format("%0." .. tostring(DECIMAL_ACCURACY - 1) .. "a",damage)
+--			else
+--				damage_string = string.format("%a",damage)
+--			end
+	else
+		if math.log(damage,10) > 10 then
+			if DECIMAL_ACCURACY > 1 then
+				damage_string = string.format("%." .. tostring(DECIMAL_ACCURACY) .. "g",damage) -- shortest representation (float or exp)
+			else
+				damage_string = string.format("%.1g",damage)
+			end
+		else
+			if DECIMAL_ACCURACY > 1 then
+				damage_string = string.format("%0." .. tostring(DECIMAL_ACCURACY - 1) .. "f",damage)
+			else
+				damage_string = string.format("%d",damage)
+			end
+		end
+	end
+	
+	if popup_instance then
+		is_fresh_instance = false
+		popup_instance.text:set_text(damage_string)
+		
+		if SETTING_POPUP_RECENTER_ON_HIT and popup_instance.anim_attach then
+			popup_instance.panel:stop(popup_instance.anim_attach)
+			popup_instance.anim_attach = nil
+		end
+		if popup_instance.anim_fadeout then
+			popup_instance.panel:stop(popup_instance.anim_fadeout)
+			popup_instance.anim_fadeout = nil
+		end
+		popup_instance.panel:set_alpha(SETTING_POPUP_ALPHA)
+		
+		if SETTING_DAMAGE_TYPE_ICON and alive(popup_instance.icon) then
+			popup_instance.icon:set_image(icon_texture,unpack(icon_rect))
+		end
+		popup_instance.body = body or popup_instance.body -- useless in the preview
+		popup_instance.damage = damage
+		
+		if SETTING_DAMAGE_STACKING_TIME_REFRESH_ENABLED then 
+			popup_instance.start_t = t
+		end
+	else
+		is_fresh_instance = true
+		local panel = parent_panel:panel({
+			name = "damage_popup_" .. tostring(damage_info),
+			w = 200,
+			h = 200,
+			x = -1000,
+			y = -1000,
+			alpha = SETTING_POPUP_ALPHA,
+			layer = 1
+		})
+		
+		local icon
+		if SETTING_DAMAGE_TYPE_ICON then
+			local icon_w,icon_h = 16,16
+			icon = panel:bitmap({
+				name = "icon",
+				texture = icon_texture,
+				texture_rect = icon_rect,
+				w = icon_w,
+				h = icon_h,
+				y = (panel:h() - icon_h) / 2,
+				valign = "grow",
+				halign = "grow",
+				visible = true
+			})
+		end
+		
+		local text = panel:text({
+			name = "text",
+			text = damage_string,
+			font = SETTING_FONT_NAME, --tweak_data.hud.medium_font,
+			font_size = SETTING_FONT_SIZE, --tweak_data.hud.medium_deafult_font_size, -- this typo is intended and accurate to the tweakdata
+			layer = layer,
+			color = color,
+			alpha = 1,
+			x = SETTING_DAMAGE_TYPE_ICON and 18 or 0,
+			align = "center",
+			vertical = "center",
+			valign = "grow",
+			halign = "grow",
+			visible = true
+		})
+		
+		popup_instance = {
+			damage = damage,
+			body = nil,
+			position = hit_position,
+			--anim_attach = attach_thread,
+			--anim_fadeout = fadeout_thread,
+			--anim_pulse = nil,
+			start_t = t,
+			ukey = nil, -- identifier for the hit unit specifically; only used for checking damage grouping
+			key = name, -- lookup key to self._popup_instances for this instance (can be changed post init; do not assume final)
+			
+			workspace = managers.menu_component._fullscreen_ws,
+			panel = panel,
+			text = text,
+			icon = icon
+		}
+		
+		self._menu_preview_popup = popup_instance
+	
+--		if alive(popup_instance.panel) then
+--			local x,y,w,h = popup_instance.text:text_rect() -- this will crash if used on a gui Text object with an invalid font, so... don't do that. stop having it be invalid
+--			popup_instance.panel:set_size(w + 4,h + 4)
+--		end
+	end
+	
+	if SETTING_POPUP_RECENTER_ON_HIT or is_fresh_instance then
+		-- note: "done callbacks" on the attach functions will never run, since those animations are designed to run indefinitely and will not naturally self-terminate
+		if SETTING_POPUP_STYLE == 2 then
+			-- bl2
+			popup_instance.anim_attach = popup_instance.panel:animate(self.animate_attach_vault,nil,popup_instance,100)
+		elseif SETTING_POPUP_STYLE == 3 then
+			-- xiv
+			popup_instance.anim_attach = popup_instance.panel:animate(self.animate_attach_xiv,nil,popup_instance,100)	
+		elseif SETTING_POPUP_STYLE == 4 then
+			-- destiny
+			popup_instance.anim_attach = popup_instance.panel:animate(self.animate_attach_destiny,nil,popup_instance,100,0.9)
+		else -- alive(body) and SETTING_POPUP_STYLE == 1 then
+			-- attach to body part
+			popup_instance.anim_attach = popup_instance.panel:animate(self.animate_attach_body,nil,popup_instance)
+		end
+	end
+	
+	
+	if headshot and SETTING_FONTSIZE_PULSE_DURATION > 0 and alive(popup_instance.text) then
+		if popup_instance.anim_pulse then
+			popup_instance.text:stop(popup_instance.anim_pulse)
+		end
+		local to = SETTING_FONT_SIZE
+		local from = to * SETTING_FONTSIZE_PULSE_MULTIPLIER
+		popup_instance.anim_pulse = popup_instance.text:animate(self.animate_text_size_grow,nil,popup_instance,from,to,SETTING_FONTSIZE_PULSE_DURATION)
+	end
+	
+	popup_instance.anim_fadeout = popup_instance.panel:animate(self.animate_popup_fadeout,cb_done,popup_instance,POPUP_HOLD_DURATION,POPUP_FADE_DURATION,nil,nil)
+end
+
+function ODamagePopups:StopPreview()
+	if alive(self._menu_preview_panel) then
+		self._menu_preview_panel:parent():remove(self._menu_preview_panel)
+	end
+	self._menu_preview_panel = nil
+	self._menu_preview_popup = nil
+end
+
+
 function ODamagePopups:CreateColorpicker()
 	if ColorPicker and not self._colorpicker then
-		self._colorpicker = ColorPicker:new("offysdamagepopups"
+		self._colorpicker = ColorPicker:new("offysdamagepopups",
+		{
+			changed_callback=callback(self,self,"callback_colorpicker_changed")
+		}
 		--[[
 		{
 			color = Color.white,
@@ -1084,7 +1468,8 @@ function ODamagePopups:ShowColorpickerMenu(id)
 			color = color,
 			palettes = self:GetPaletteColors(),
 			done_callback = callback(self,self,"callback_colorpicker_confirm",id),
-			changed_callback = nil
+			changed_callback = nil,
+			blur_bg_alpha = 0
 		})
 	end
 end
@@ -1132,6 +1517,13 @@ end
 function ODamagePopups:callback_qki_confirm(id,text)
 	self.settings.appearance_popup_font_name = text
 	self:SaveSettings()
+	self:CheckFontLoaded()
+end
+
+function ODamagePopups:callback_colorpicker_changed(color)
+	self:CreatePreview({
+		color = color
+	})
 end
 
 function ODamagePopups:callback_colorpicker_confirm(id,color,palettes,success)
