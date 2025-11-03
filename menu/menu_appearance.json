@@ -67,7 +67,7 @@
 			"value" : "appearance_popup_declutter_distance_max",
 			"default_value" : 0,
 			"min" : 0,
-			"max" : 100,
+			"max" : 250,
 			"step" : 5
 		},
 		{
@@ -79,7 +79,7 @@
 			"value" : "appearance_popup_declutter_distance_min",
 			"default_value" : 0,
 			"min" : 0,
-			"max" : 100,
+			"max" : 250,
 			"step" : 5
 		},
 		{

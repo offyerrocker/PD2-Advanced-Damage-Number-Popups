@@ -3,6 +3,7 @@ todo
 
 default position for dot damage (instead of unit pos)
 
+max number of popups
 
 assure popup spreading in opposite directions for readability
 
@@ -37,8 +38,8 @@ ODamagePopups = {
 		
 		appearance_popup_alpha = 1, -- opacity
 		appearance_popup_declutter_fade_alpha = 0.5, -- fade alpha of panel according to proximity to screen center; this value is reached at distance<=declutter_distance_min
-		appearance_popup_declutter_distance_max = 50, -- outer distance, where fadeout starts; no menu option
-		appearance_popup_declutter_distance_min = 20, -- inner distance, at theoretical max fadeout (min visibility); no menu option
+		appearance_popup_declutter_distance_max = 50, -- outer distance, where fadeout starts
+		appearance_popup_declutter_distance_min = 20, -- inner distance, at theoretical max fadeout (min visibility)
 		appearance_popup_position_offset_distance = 32,
 		appearance_popup_hold_duration = 0.4,
 		appearance_popup_fade_duration = 0.25,
@@ -442,7 +443,7 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 		end
 		
 		
-		if headshot and alive(popup_instance.text) then
+		if headshot and SETTING_FONTSIZE_PULSE_DURATION > 0 and alive(popup_instance.text) then
 			if popup_instance.anim_pulse then
 				popup_instance.text:stop(popup_instance.anim_pulse)
 			end
@@ -746,6 +747,7 @@ end
 
 -- calls parent(), so should not be used on ws root panel
 function ODamagePopups.animate_popup_fadeout(o,cb_done,data,hold_duration,fade_duration,from_a,to_a,...)
+--from_font_size,to_font_size,...)
 	hold_duration = hold_duration or 1
 	fade_duration = fade_duration or 1
 	local max_fade_duration = fade_duration
@@ -755,10 +757,18 @@ function ODamagePopups.animate_popup_fadeout(o,cb_done,data,hold_duration,fade_d
 	local d_a = from_a - to_a -- progressing from 1 -> 0, so d_a is inverted
 	local a_temp = 1
 	
-	local FADEOUT_ALPHA = ODamagePopups.settings.appearance_popup_declutter_fade_alpha
-	--local DELTA_FADEOUT_ALPHA = to_a - FADEOUT_ALPHA
+--	local d_font_size
+--	if to_font_size then
+--		from_font_size = from_font_size or o:font_size()
+--		d_font_size = to_font_size - from_font_size
+--	end
 	
-	local px,py = o:parent():center()
+	
+	local FADEOUT_ALPHA = ODamagePopups.settings.appearance_popup_declutter_fade_alpha
+	
+	local parent = o:parent() or o
+	local px = parent:w()/2
+	local py = parent:h()/2
 	local cx,cy = 0,0
 	local dx,dy = 0,0
 	local sq_current = 1
@@ -782,7 +792,7 @@ function ODamagePopups.animate_popup_fadeout(o,cb_done,data,hold_duration,fade_d
 		
 		sq_current = math.sqrt(dx*dx + dy*dy) -- distance from center
 		if sq_current < SQ_THRESHOLD_MAX then
-			a_temp = FADEOUT_ALPHA * (1-(SQ_THRESHOLD_MAX - sq_current) / SQ_THRESHOLD_DELTA)
+			a_temp = FADEOUT_ALPHA + (math.max(sq_current - SQ_THRESHOLD_MIN,0))/SQ_THRESHOLD_DELTA
 		else
 			a_temp = 1
 		end
@@ -797,15 +807,24 @@ function ODamagePopups.animate_popup_fadeout(o,cb_done,data,hold_duration,fade_d
 		dx,dy = cx-px, cy-py
 		sq_current = math.sqrt(dx*dx + dy*dy)
 		if sq_current < SQ_THRESHOLD_MAX then
-			a_temp = FADEOUT_ALPHA * (1-(SQ_THRESHOLD_MAX - sq_current) / SQ_THRESHOLD_DELTA)
+			a_temp = FADEOUT_ALPHA + (math.max(sq_current - SQ_THRESHOLD_MIN,0))/SQ_THRESHOLD_DELTA
 		else
 			a_temp = 1
 		end
 		
-		o:set_alpha(a_temp * (to_a + lerp * lerp * d_a))
+		o:set_alpha(a_temp * (to_a + lerp * d_a))
+		
+--		if d_font_size then
+--			o:set_font_size(from_font_size + (d_font_size * lerp * lerp))
+--		end
 		
 		fade_duration = fade_duration - coroutine.yield()
 	end
+	
+--	if to_font_size then
+--		o:set_font_size(to_font_size)
+--	end
+	
 	
 	if cb_done then
 		cb_done(o,data)
