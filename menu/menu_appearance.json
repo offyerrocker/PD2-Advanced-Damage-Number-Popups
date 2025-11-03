@@ -28,6 +28,19 @@
 			"value" : "appearance_popup_style"
 		},
 		{
+			"type" : "multiple_choice",
+			"id" : "menu_odp_group_damage_aggregate_mode",
+			"title" : "menu_odp_group_damage_aggregate_mode_title",
+			"description" : "menu_odp_group_damage_aggregate_mode_desc",
+			"callback" : "callback_odp_group_damage_aggregate_mode",
+			"items" : [
+				"odp_group_damage_aggregate_mode_none",
+				"odp_group_damage_aggregate_mode_unit",
+				"odp_group_damage_aggregate_mode_bodyunit"
+			],
+			"value" : "group_damage_aggregate_mode"
+		},
+		{
 			"type" : "toggle",
 			"id" : "menu_odp_appearance_use_body_relative_position",
 			"title" : "menu_odp_appearance_use_body_relative_position_title",
