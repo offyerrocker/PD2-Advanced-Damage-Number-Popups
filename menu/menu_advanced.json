@@ -46,11 +46,11 @@
 			"description" : "menu_odp_group_popup_recenter_on_hit_desc",
 			"callback" : "callback_odp_group_popup_recenter_on_hit",
 			"value" : "group_popup_recenter_on_hit"
+		},
 		{
 			"id" : "menu_odp_div_advanced_1",
 			"type" : "divider",
 			"size" : 8
-		},
 		},
 		{
 			"type" : "slider",
