@@ -3,7 +3,7 @@
 	"description" : "Show customizable damage popups, with a variety of options and styles.",
 	"author" : "Offyerrocker",
 	"contact" : "https://modworkshop.net/mod/54179",
-	"version" : "1.0.0",
+	"version" : "1.0.1",
 	"image" : "icon.png",
 	"blt_version" : 2,
 	"color" : "31 133 222",
