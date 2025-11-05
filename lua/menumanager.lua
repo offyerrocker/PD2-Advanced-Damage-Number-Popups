@@ -984,6 +984,8 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		ODamagePopups.settings.appearance_popup_style = value
 		ODamagePopups:SaveSettings()
 		
+		ODamagePopups:StopPreview()
+		ODamagePopups:StartPreview()
 		ODamagePopups:CreatePreview()
 	end
 	
