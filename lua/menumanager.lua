@@ -477,13 +477,17 @@ function ODamagePopups:CreateDamagePopup(damage_info)
 end
 
 function ODamagePopups:ClearPopups()
-	if alive(self._parent_panel) then
+	if self._parent_panel and alive(self._parent_panel) then
 		for k,popup in pairs(self._popup_instances) do 
-			if alive(popup.panel) then
-				self._parent_panel:remove(popup.panel)
+			if popup.panel and alive(popup.panel) then
+				popup.panel:stop() -- stop all anims
+				--self._parent_panel:remove(popup.panel)
 			end
 			self._popup_instances[k] = nil
 		end
+		
+		-- remove all children
+		self._parent_panel:clear()
 	else
 		for k,popup in pairs(self._popup_instances) do 
 			self._popup_instances[k] = nil
@@ -1155,9 +1159,9 @@ function ODamagePopups:StartPreview(...)
 		return
 	end
 	
-	if not alive(self._menu_preview_panel) then
+	if not (self._menu_preview_panel and alive(self._menu_preview_panel)) then
 		local fullscreen_ws = managers.menu_component and managers.menu_component._fullscreen_ws
-		if alive(fullscreen_ws) then 
+		if fullscreen_ws and alive(fullscreen_ws) then 
 			self._menu_preview_panel = fullscreen_ws:panel():panel({
 				name = "odp_preview_panel"
 			})
@@ -1182,7 +1186,7 @@ function ODamagePopups:CreatePreview(damage_info)
 		return
 	end
 	
-	if not alive(self._menu_preview_panel) then
+	if not (self._menu_preview_panel and alive(self._menu_preview_panel)) then
 		return 
 	end
 	
@@ -1235,9 +1239,6 @@ function ODamagePopups:CreatePreview(damage_info)
 	local killshot = damage_info.killshot or (damage_info.result and damage_info.result.type == "death")
 	
 	local t = Application:time()
-	self._menu_preview_panel:panel({
-		name = "preview_" .. name
-	})
 	
 	local color_1 = Color.white
 	local color_2 = Color.black
@@ -1280,16 +1281,15 @@ function ODamagePopups:CreatePreview(damage_info)
 	local parent_panel = self._menu_preview_panel
 	local function cb_done(o,data)
 		-- remove panel and unregister popup
-		if alive(parent_panel) then
-			parent_panel:remove(o)
-		end
+		o:parent():remove(o)
+		
 		local _t = Application:time()
 		if self._menu_preview_popup == data or (not self._menu_preview_respawn_popup_t or (self._menu_preview_respawn_popup_t < _t)) then
 			-- make one popup on expiry
 			-- (don't clone each one)
-			self:CreatePreview()
 			self._menu_preview_popup = nil
 			self._menu_preview_respawn_popup_t = _t + 1
+			self:CreatePreview()
 		end
 	end
 	
@@ -1472,7 +1472,15 @@ end
 
 function ODamagePopups:StopPreview()
 	if alive(self._menu_preview_panel) then
-		self._menu_preview_panel:parent():remove(self._menu_preview_panel)
+		if self._menu_preview_popup and alive(self._menu_preview_popup.panel) then
+			self._menu_preview_popup.panel:stop() -- stop all anims; this should be done already when the panel clears, but do it explicitly here just in case
+		end
+		self._menu_preview_panel:clear()
+		
+		local parent = self._menu_preview_panel:parent()
+		if parent and alive(parent) and parent.remove then
+			parent:remove(self._menu_preview_panel)
+		end
 	end
 	self._menu_preview_panel = nil
 	self._menu_preview_popup = nil
