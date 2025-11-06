@@ -23,7 +23,8 @@ warframe damage numbers?
 
 ODamagePopups = {
 	settings = {
---		general_master_enabled = true,
+		general_master_enabled = true,
+		general_menu_preview_enabled = false,
 		general_fun_allowed = 2, -- april fool's control; 1=always,2=seasonal,3=never
 		general_use_raw_damage = false,
 		general_use_player_damage_only = true,
@@ -885,6 +886,10 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		local value = item:value() == "on"
 		ODamagePopups.settings.general_master_enabled = value
 		ODamagePopups:SaveSettings()
+	end
+	
+	MenuCallbackHandler.callback_odp_general_menu_preview_enabled = function(self,item)
+		local value = item:value() == "on"
 		
 		if not value then
 			ODamagePopups:ClearPopups()
@@ -892,6 +897,12 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		else
 			ODamagePopups:StartPreview()
 		end
+		
+		-- because this may be related to crashing, i'm going to make it wait for the (hopefully) successful preview generation first, 
+		-- before changing the user settings;
+		-- that way, if the preview does cause a crash, this won't lock the user out of the settings menu
+		ODamagePopups.settings.general_menu_preview_enabled = value
+		ODamagePopups:SaveSettings()
 	end
 	MenuCallbackHandler.callback_odp_general_fun_allowed = function(self,item)
 		-- note: this is an index to a multiplechoice, not a toggle
@@ -899,14 +910,14 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		ODamagePopups.settings.general_fun_allowed = value
 		ODamagePopups:SaveSettings()
 		
-		ODamagePopups:CreatePreview()
+		ODamagePopups:StartPreview()
 	end
 	MenuCallbackHandler.callback_odp_general_use_raw_damage = function(self,item)
 		local value = item:value() == "on"
 		ODamagePopups.settings.general_use_raw_damage = value
 		ODamagePopups:SaveSettings()
 		
-		ODamagePopups:CreatePreview()
+		ODamagePopups:StartPreview()
 	end
 	
 	
@@ -915,14 +926,14 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		ODamagePopups.settings.general_use_player_damage_only = value
 		ODamagePopups:SaveSettings()
 		
-		ODamagePopups:CreatePreview()
+		ODamagePopups:StartPreview()
 	end
 	MenuCallbackHandler.callback_odp_general_hide_zero_damage_hits = function(self,item)
 		local value = item:value() == "on"
 		ODamagePopups.settings.general_hide_zero_damage_hits = value
 		ODamagePopups:SaveSettings()
 		
-		ODamagePopups:CreatePreview()
+		ODamagePopups:StartPreview()
 	end
 	
 	MenuCallbackHandler.callback_odp_general_damage_decimal_accuracy = function(self,item)
@@ -930,7 +941,7 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		ODamagePopups.settings.general_damage_decimal_accuracy = value
 		ODamagePopups:SaveSettings()
 		
-		ODamagePopups:CreatePreview()
+		ODamagePopups:StartPreview()
 	end
 	
 	
@@ -941,7 +952,7 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		ODamagePopups.settings.group_damage_aggregate_mode = value
 		ODamagePopups:SaveSettings()
 		
-		ODamagePopups:CreatePreview()
+		ODamagePopups:StartPreview()
 	end
 	
 	MenuCallbackHandler.callback_odp_group_damage_time_window = function(self,item)
@@ -949,7 +960,7 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		ODamagePopups.settings.group_damage_time_window = value
 		ODamagePopups:SaveSettings()
 		
-		ODamagePopups:CreatePreview()
+		ODamagePopups:StartPreview()
 	end
 	
 	MenuCallbackHandler.callback_odp_group_damage_use_refresh = function(self,item)
@@ -957,7 +968,7 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		ODamagePopups.settings.group_damage_use_refresh = value
 		ODamagePopups:SaveSettings()
 		
-		ODamagePopups:CreatePreview()
+		ODamagePopups:StartPreview()
 	end
 	
 	MenuCallbackHandler.callback_odp_group_popup_recenter_on_hit = function(self,item)
@@ -965,7 +976,7 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		ODamagePopups.settings.group_popup_recenter_on_hit = value
 		ODamagePopups:SaveSettings()
 		
-		ODamagePopups:CreatePreview()
+		ODamagePopups:StartPreview()
 	end
 	
 	
@@ -976,7 +987,7 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		ODamagePopups.settings.appearance_use_damage_type_icon = value
 		ODamagePopups:SaveSettings()
 		
-		ODamagePopups:CreatePreview()
+		ODamagePopups:StartPreview()
 	end
 	
 	MenuCallbackHandler.callback_odp_appearance_popup_style = function(self,item)
@@ -986,7 +997,6 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		
 		ODamagePopups:StopPreview()
 		ODamagePopups:StartPreview()
-		ODamagePopups:CreatePreview()
 	end
 	
 	MenuCallbackHandler.callback_odp_appearance_use_body_relative_position = function(self,item)
@@ -994,7 +1004,7 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		ODamagePopups.settings.appearance_use_body_relative_position = value
 		ODamagePopups:SaveSettings()
 		
-		ODamagePopups:CreatePreview()
+		ODamagePopups:StartPreview()
 	end
 	
 	
@@ -1003,7 +1013,7 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		ODamagePopups.settings.appearance_popup_hold_duration = value
 		ODamagePopups:SaveSettings()
 		
-		ODamagePopups:CreatePreview()
+		ODamagePopups:StartPreview()
 	end
 	
 	MenuCallbackHandler.callback_odp_appearance_popup_fade_duration = function(self,item)
@@ -1011,7 +1021,7 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		ODamagePopups.settings.appearance_popup_fade_duration = value
 		ODamagePopups:SaveSettings()
 		
-		ODamagePopups:CreatePreview()
+		ODamagePopups:StartPreview()
 	end
 	
 	
@@ -1021,7 +1031,7 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		ODamagePopups.settings.appearance_popup_fontsize_pulse_mul = value
 		ODamagePopups:SaveSettings()
 		
-		ODamagePopups:CreatePreview({
+		ODamagePopups:StartPreview({
 			headshot = true
 		})
 	end
@@ -1031,7 +1041,7 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		ODamagePopups.settings.appearance_popup_fontsize_pulse_duration = value
 		ODamagePopups:SaveSettings()
 		
-		ODamagePopups:CreatePreview({
+		ODamagePopups:StartPreview({
 			headshot = true
 		})
 	end
@@ -1043,7 +1053,7 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		ODamagePopups.settings.appearance_popup_alpha = value
 		ODamagePopups:SaveSettings()
 		
-		ODamagePopups:CreatePreview()
+		ODamagePopups:StartPreview()
 	end
 	
 	MenuCallbackHandler.callback_odp_appearance_popup_declutter_distance_min = function(self,item)
@@ -1051,21 +1061,21 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		ODamagePopups.settings.appearance_popup_declutter_distance_min = value
 		ODamagePopups:SaveSettings()
 		
-		ODamagePopups:CreatePreview()
+		ODamagePopups:StartPreview()
 	end
 	MenuCallbackHandler.callback_odp_appearance_popup_declutter_distance_max = function(self,item)
 		local value = item:value()
 		ODamagePopups.settings.appearance_popup_declutter_distance_max = value
 		ODamagePopups:SaveSettings()
 		
-		ODamagePopups:CreatePreview()
+		ODamagePopups:StartPreview()
 	end
 	MenuCallbackHandler.callback_odp_appearance_popup_declutter_fade_alpha = function(self,item)
 		local value = item:value()
 		ODamagePopups.settings.appearance_popup_declutter_fade_alpha = value
 		ODamagePopups:SaveSettings()
 		
-		ODamagePopups:CreatePreview()
+		ODamagePopups:StartPreview()
 	end
 	
 	MenuCallbackHandler.callback_odp_appearance_popup_font_size = function(self,item)
@@ -1073,7 +1083,7 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		ODamagePopups.settings.appearance_popup_font_size = value
 		ODamagePopups:SaveSettings()
 		
-		ODamagePopups:CreatePreview()
+		ODamagePopups:StartPreview()
 	end
 	
 	MenuCallbackHandler.callback_odp_quickkeyboardinput_custom_font_name = function(self,item)
@@ -1086,7 +1096,7 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		ODamagePopups.settings.appearance_popup_font_custom_enabled = value
 		ODamagePopups:SaveSettings()
 		ODamagePopups:CheckFontLoaded()
-		ODamagePopups:CreatePreview()
+		ODamagePopups:StartPreview()
 	end
 	
 	MenuCallbackHandler.callback_odp_colorpicker_customize_bullet = function(self,item)
@@ -1122,6 +1132,8 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 		if focus then
 			-- create preview
 			ODamagePopups:StartPreview()
+		else
+			ODamagePopups:StopPreview()
 		end
 	end
 	
@@ -1138,7 +1150,11 @@ Hooks:Add( "MenuManagerInitialize", "odp_MenuManagerInitialize", function(menu_m
 	--MenuHelper:LoadFromJsonFile(ODamagePopups._menu_path, ODamagePopups, ODamagePopups.settings)
 end)
 
-function ODamagePopups:StartPreview()
+function ODamagePopups:StartPreview(...)
+	if not self.settings.general_menu_preview_enabled then
+		return
+	end
+	
 	if not alive(self._menu_preview_panel) then
 		local fullscreen_ws = managers.menu_component and managers.menu_component._fullscreen_ws
 		if alive(fullscreen_ws) then 
@@ -1157,11 +1173,15 @@ function ODamagePopups:StartPreview()
 		end
 	end
 	
-	self:CreatePreview()
+	self:CreatePreview(...)
 end
 
 -- create a preview popup instance
 function ODamagePopups:CreatePreview(damage_info)
+	if not self.settings.general_menu_preview_enabled then
+		return
+	end
+	
 	if not alive(self._menu_preview_panel) then
 		return 
 	end

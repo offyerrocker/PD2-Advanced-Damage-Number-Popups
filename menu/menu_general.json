@@ -2,8 +2,6 @@
 	"menu_id" : "menu_odp_options_general",
 	"parent_menu_id" : "menu_odp_options_main",
 	"title" : "menu_odp_options_general_title",
-	"focus_changed_callback" : "callback_odp_menu_main_focus",
-	"back_callback" : "callback_odp_menu_main_back",
 	"items" : [
 		{
 			"type" : "toggle",
@@ -12,6 +10,14 @@
 			"description" : "menu_odp_general_master_enabled_desc",
 			"callback" : "callback_odp_general_master_enabled",
 			"value" : "general_master_enabled"
+		},
+		{
+			"type" : "toggle",
+			"id" : "menu_odp_general_menu_preview_enabled",
+			"title" : "menu_odp_general_menu_preview_enabled_title",
+			"description" : "menu_odp_general_menu_preview_enabled_desc",
+			"callback" : "callback_odp_general_menu_preview_enabled",
+			"value" : "general_menu_preview_enabled"
 		},
 		{
 			"id" : "menu_odp_div_general_1",

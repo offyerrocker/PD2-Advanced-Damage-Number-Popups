@@ -7,6 +7,8 @@
 	
 	"menu_odp_general_master_enabled_title" : "Enabled",
 	"menu_odp_general_master_enabled_desc" : "Enable or disable popups from this mod.",
+	"menu_odp_general_menu_preview_enabled_title" : "Menu Preview",
+	"menu_odp_general_menu_preview_enabled_desc" : "Show what the damage popups will look like in the menu",
 	"menu_odp_general_fun_allowed_title" : "Fun Allowed",
 	"menu_odp_general_fun_allowed_desc" : "Enables some silly April Fool's effects.",
 	"menu_odp_general_use_raw_damage_title" : "Use Raw Damage",
