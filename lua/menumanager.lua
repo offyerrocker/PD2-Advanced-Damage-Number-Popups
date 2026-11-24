@@ -564,12 +564,13 @@ function ODamagePopups.animate_attach_body(o,cb_done,data)
 	local screen_pos = Vector3()
 	local cam_fwd_vec = Vector3()
 	local pos_dir_vec = Vector3()
-	local viewport_cam = managers.viewport:get_current_camera()
 	local ws = data.workspace
 	local offset_distance = ODamagePopups.settings.appearance_popup_position_offset_distance
 	local t = TimerManager:game():time()
 	local offset_x,offset_y = math.cos(t * 360) * offset_distance,math.sin(t * 360) * offset_distance
 	while true do 
+		local viewport_cam = managers.viewport:get_current_camera()
+		if not viewport_cam then break end
 		if alive(body) and ODamagePopups.settings.appearance_use_body_relative_position then
 			mvector3.set(world_pos,body:oobb():center())
 		end
@@ -605,10 +606,11 @@ function ODamagePopups.animate_attach_vault(o,cb_done,data,fly_speed)
 	local screen_pos = Vector3()
 	local cam_fwd_vec = Vector3()
 	local pos_dir_vec = Vector3()
-	local viewport_cam = managers.viewport:get_current_camera()
 	local ws = data.workspace
 	local dt = 0
 	while true do 
+		local viewport_cam = managers.viewport:get_current_camera()
+		if not viewport_cam then break end
 		if alive(body) and ODamagePopups.settings.appearance_use_body_relative_position then
 			mvector3.set(world_pos,body:oobb():center())
 		end
@@ -645,11 +647,12 @@ function ODamagePopups.animate_attach_xiv(o,cb_done,data,fly_speed)
 	local screen_pos = Vector3()
 	local cam_fwd_vec = Vector3()
 	local pos_dir_vec = Vector3()
-	local viewport_cam = managers.viewport:get_current_camera()
 	local ws = data.workspace
 	local y = -ODamagePopups.settings.appearance_popup_position_offset_distance
 	local dt = 0
 	while true do 
+		local viewport_cam = managers.viewport:get_current_camera()
+		if not viewport_cam then break end
 		y = y - (fly_speed * dt)
 		
 		if alive(body) and ODamagePopups.settings.appearance_use_body_relative_position then
@@ -685,7 +688,6 @@ function ODamagePopups.animate_attach_destiny(o,cb_done,data,fly_speed,decay)
 	local screen_pos = Vector3()
 	local cam_fwd_vec = Vector3()
 	local pos_dir_vec = Vector3()
-	local viewport_cam = managers.viewport:get_current_camera()
 	local ws = data.workspace
 	local x_speed = fly_speed
 	local y_speed
@@ -709,6 +711,8 @@ function ODamagePopups.animate_attach_destiny(o,cb_done,data,fly_speed,decay)
 	y_speed = math.abs(y_speed)
 	
 	while true do 
+		local viewport_cam = managers.viewport:get_current_camera()
+		if not viewport_cam then break end
 		mvector3.set(cam_fwd_vec,viewport_cam:rotation():y())
 		mvector3.set(pos_dir_vec,viewport_cam:position())
 		if alive(body) and ODamagePopups.settings.appearance_use_body_relative_position then
